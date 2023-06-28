@@ -1,0 +1,371 @@
+import asyncio
+import discord
+import json
+from dataclasses import field, dataclass
+from src.localizations import Localizations
+from src.objects import User
+from src.constants import CHANNELS
+import src.functions as functions
+from .module import Module
+import os
+import discord
+import time
+from dotenv import load_dotenv
+import calendar
+import datetime
+import asyncio
+from PIL import Image, ImageDraw, ImageFont
+import string
+import random
+import json
+
+
+def get_filename(name: str, icon: bool = False) -> str:
+    return f'assets/casino/{name}' if not icon else f'assets/casino/icons/{name}'
+
+
+def get_data_filename(name: str) -> str:
+    return f'data/casino/{name}'
+
+
+class Constants:
+    ADMIN_COOLDOWN: int = 5 * 60
+    USER_COOLDOWN: int = 60 * 60
+    MAX_AMOUNT: int = 100000
+    MIN_AMOUNT: int = 1
+    TILESIZE: tuple[int, int] = (39, 51)
+    BG_SIZE: tuple[int, int] = (365, 301)
+    ROWS: int = 3
+    COLUMNS: int = 3
+    MAXIMUM: int = 32
+
+    WIN_LINES: dict[str, list[tuple[int, int]]] = {
+        '1': [(0, 1), (1, 1), (2, 1)],
+        '2': [(0, 2), (1, 2), (2, 2)],
+        '3': [(0, 0), (1, 0), (2, 0)],
+        '4': [(0, 2), (1, 1), (2, 0)],
+        '5': [(0, 0), (1, 1), (2, 2)]
+    }
+
+    TILE_POSITIONS: list[list[tuple[int, int]]] = [
+        [(96, 98), (96, 166), (96, 234)],
+        [(161, 98), (161, 166), (161, 234)],
+        [(226, 98), (226, 166), (226, 234)]
+    ]
+
+
+class Images:
+    lost_image: Image.Image = Image.open(get_filename('lost.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    won_image: Image.Image = Image.open(get_filename('won.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    title_image: Image.Image = Image.open(get_filename('title.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    font: ImageFont.FreeTypeFont = ImageFont.truetype(get_filename('comicbold.ttf'), 40)
+    im_background: Image.Image = Image.open(get_filename('unpulled.png')).convert('RGBA').resize(
+        Constants.BG_SIZE)
+    im_question: Image.Image = Image.open(get_filename('kysymys.png')).resize(Constants.TILESIZE)
+
+    win_images: dict[str, Image] = {
+        '1': Image.open(get_filename('linja1.png')),
+        '2': Image.open(get_filename('linja2.png')),
+        '3': Image.open(get_filename('linja3.png')),
+        '4': Image.open(get_filename('linja4.png')),
+        '5': Image.open(get_filename('linja5.png'))
+    }
+    partial_images = {
+        '1': win_images['1'].crop((0, 0, 203, Constants.BG_SIZE[1])),
+        '2': win_images['2'].crop((0, 0, 203, Constants.BG_SIZE[1])),
+        '3': win_images['3'].crop((0, 0, 203, Constants.BG_SIZE[1])),
+        '4': win_images['4'].crop((0, 0, 203, Constants.BG_SIZE[1])),
+        '5': win_images['5'].crop((0, 0, 203, Constants.BG_SIZE[1]))
+    }
+
+
+@dataclass
+class Chip:
+    name: str
+    filename: str
+    prevelance: int
+    win: int
+    joker: int
+    file: Image = None
+
+    def __post_init__(self):
+        self.filename = get_filename(self.filename, True)
+        self.file = Image.open(self.filename).resize(Constants.TILESIZE)
+
+
+@dataclass
+class Plugin(Module):
+    casino_times: dict = field(default_factory=dict)
+    casino_order: list[int] = None
+    warned: bool = False
+    chips: list[Chip] = field(default_factory=list)
+
+    def __post_init__(self):
+        self.casino_order = [0, 1, 2, 3]
+
+        if not os.path.exists(f'data/casino/'):
+            os.mkdir(f'data/casino/')
+
+        with open(get_filename('pelimerkit.json')) as f:
+            chips = json.load(f)
+            for chip in chips:
+                self.chips.append(Chip(**chip))
+
+    async def on_ready(self):
+        @self.bot.commands.register(command_name='kasino', function=self.casino,
+                                    description=Localizations.get('CASINO_DESCRIPTION'), commands_per_day=10,
+                                    timeout=600)
+        async def kasino(interaction: discord.Interaction, summa: int = 100000):
+            await self.bot.commands.commands['kasino'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction,
+                sum=summa
+            )
+
+    async def casino(self, user: User, message: discord.Message | None = None,
+                     interaction: discord.Interaction | None = None,
+                     sum: int = Constants.MAX_AMOUNT,
+                     **kwargs):
+        play_amount: int = max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT)
+        if message:
+            contents: list[str] = message.content.lower().split(' ')
+            if len(contents) < 2:
+                # no sum
+                self.reset_cooldown(user)
+                await self.bot.commands.error(Localizations.get('CASINO_GUIDE'), message)
+                return
+            if contents[1] != 'max':
+                try:
+                    play_amount = int(contents[1])
+                    if play_amount > Constants.MAX_AMOUNT or play_amount < Constants.MIN_AMOUNT:
+                        self.reset_cooldown(user)
+                        await self.bot.commands.error(
+                            Localizations.get('CASINO_WRONG_SUM').format(Constants.MIN_AMOUNT, Constants.MAX_AMOUNT),
+                            message)
+                        return
+                except ValueError:
+                    self.reset_cooldown(user)
+                    await self.bot.commands.error(Localizations.get('CASINO_GUIDE'), message)
+                    return
+
+        ts = functions.get_current_timestamp()
+        ch_id: str = str(message.channel.id) if message else str(interaction.channel_id)
+        u_id: str = str(message.author.id) if message else str(interaction.user.id)
+
+        if ch_id not in self.casino_times:
+            self.casino_times[ch_id] = 0
+
+        if ts - self.casino_times[ch_id] <= 30 and int(u_id) != 623974457404293130:
+            if not self.warned:
+                self.warned = True
+                await self.bot.commands.error(Localizations.get('CASINO_ONGOING'), message, interaction)
+            elif message:
+                await message.delete()
+            return
+
+        self.warned = False
+        self.casino_times[ch_id] = ts
+        chosen_reels: list[list[Chip]] = self.get_chosen_tiles(self.chips)
+        wins: dict[str, Chip] = self.check_wins(chosen_reels)
+        partial_wins = self.check_partial_wins(chosen_reels)
+        files: list[str] = ['unpulled.png']
+        win_screen: Image.Image | None = None
+        for i in range(Constants.COLUMNS):
+            if i == 1 and not partial_wins:
+                continue
+            bg: Image = Images.im_background.copy()
+            if i == Constants.COLUMNS - 1:
+                for win in wins:
+                    bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+            if i == 1:
+                for partial_win in partial_wins:
+                    bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+            for col in range(i + 1, Constants.COLUMNS):
+                for row in range(Constants.ROWS):
+                    bg.paste(Images.im_question, Constants.TILE_POSITIONS[col][row])
+            for col in range(0, i + 1):
+                for row in range(Constants.ROWS):
+                    bg.paste(chosen_reels[col][row].file, Constants.TILE_POSITIONS[col][row])
+            if i == Constants.COLUMNS - 1:
+                win_screen = bg
+                # if len(wins) == 0:
+                #    bg.paste(lost_image, (0, 0), lost_image)
+            fname = f'casino_{self.randomword(10)}.png'
+            filename = fname
+            # filename = "/var/www/html/kasino/" + fname
+            bg.save(filename, **bg.info)
+            files.append(fname)
+            # urls.append(fname)
+        amount = 0
+        if len(wins) == 0:
+            fname = f'casino_{self.randomword(10)}.png'
+            filename = fname
+            # filename = "/var/www/html/kasino/" + fname
+            bg: Image.Image = win_screen.copy()
+            bg.paste(Images.lost_image, (0, 0), Images.lost_image)
+            bg.save(filename, **bg.info)
+            files.append(fname)
+        if len(wins) > 0:
+            bg: Image.Image = win_screen.copy()
+            bg.paste(Images.won_image, (0, 0), Images.won_image)
+            for win in wins:
+                amount += wins[win].win * play_amount
+            bg.paste(Images.title_image, (0, 0), Images.title_image)
+            title_message = '{:,}'.format(amount)
+            d = ImageDraw.Draw(bg)
+            w, h = d.textsize(title_message, font=Images.font)
+            d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
+                   stroke_width=-1, stroke_fill=(0, 0, 0))
+            fname = get_data_filename(self.randomword(10))
+            filename = fname
+            #filename = "/var/www/html/kasino/" + fname
+            bg.save(filename, **bg.info)
+            files.append(fname)
+
+        casino_hide: discord.client.GuildChannel = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
+
+        casino_post: discord.Message | None = None
+        i: int = 0
+        for file in files:
+            embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+            embed.set_image(url='https://sakkee.org/kasino/' + file)
+            if interaction and i == 0:
+                await interaction.response.send_message(Localizations.get("CASINO_LAUNCH").format(user.name),
+                                                        delete_after=5.0)
+            if casino_post is None:
+                casino_post = await message.channel.send(embed=embed) if message else \
+                    await interaction.channel.send(embed=embed)
+            else:
+                await casino_post.edit(embed=embed)
+            if i == 0:
+                for f in files[1:]:
+                    embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                          description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+                    embed.set_image(url='https://sakkee.org/kasino/' + f)
+                    await casino_hide.send(embed=embed, delete_after=1.0)
+            i += 1
+            if i == len(files):
+                await asyncio.sleep(3)
+                if len(wins) > 0 and amount >= 0:
+                    msg = await self.bot.commands.message(Localizations.get('CASINO_WIN').
+                                                          format(amount, self.bot.client.get_user(user.id).mention),
+                                                          message, interaction, channel_send=True)
+                    await asyncio.sleep(2)
+                elif len(wins) > 0 > amount:
+                    msg = await self.bot.commands.message(Localizations.get('CASINO_WIN_BAN').format(
+                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
+                    await asyncio.sleep(10)
+                else:
+                    msg = await self.bot.commands.message(Localizations.get('CASINO_LOSE').format(
+                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
+                self.casino_times[ch_id] = 0
+                await asyncio.sleep(4)
+            if i < 2:
+                await asyncio.sleep(4)
+            else:
+                await asyncio.sleep(4)
+
+        self.casino_times[ch_id] = 0
+        if len(wins) == 0:
+            try:
+                if message:
+                    await message.delete()
+            except:
+                pass
+            finally:
+                await casino_post.delete()
+                await msg.delete()
+        i: int = 0
+        for file in files[1:]:
+            i += 1
+            if i == len(files[1:]) and len(wins) > 0:
+                continue
+            os.remove(file)
+        if amount < 0:
+            await message.guild.ban(message.author, delete_message_days=0, reason='Megiskasino bän') if message else \
+                await interaction.guild.ban(interaction.user, delete_message_days=0, reason='Megiskasino bän')
+
+    def reset_cooldown(self, user: User):
+        if str(user.id) in self.bot.commands.commands['kasino'].timeouts:
+            self.bot.commands.commands['kasino'].timeouts[str(user.id)] = 0
+
+    @staticmethod
+    def get_random_numbers(max: int, count: int) -> list[int]:
+        return_list: list[int] = []
+        for i in range(count):
+            rd = random.randrange(max)
+            while rd in return_list:
+                rd = random.randrange(max)
+            return_list.append(rd)
+        return return_list
+
+    @staticmethod
+    def create_reels(assets: list[Chip]) -> list:
+        reels: list = []
+        for i in range(Constants.COLUMNS):
+            positions: dict[str, Chip] = {}
+            for chip in assets:
+                for j in range(chip.prevelance):
+                    rd = random.randrange(Constants.MAXIMUM)
+                    while str(rd) in positions:
+                        rd = random.randrange(Constants.MAXIMUM)
+                    positions[str(rd)] = chip
+            positions: list[str] = sorted(positions.items())
+            reels.append([x[1] for x in positions])
+        return reels
+
+    @staticmethod
+    def randomword(length: int) -> str:
+        letters: str = string.ascii_lowercase
+        return ''.join(random.choice(letters) for i in range(length))
+
+    def get_chosen_tiles(self, chips: list[Chip]) -> list[list[Chip]]:
+        reels = self.create_reels(chips)
+        chosen_reels = []
+        for i in range(Constants.COLUMNS):
+            curr_list = []
+            for rd in self.get_random_numbers(Constants.MAXIMUM, Constants.ROWS):
+                curr_list.append(reels[i][rd])
+            chosen_reels.append(curr_list)
+        return chosen_reels
+
+    @staticmethod
+    def check_wins(tiles: list[list[Chip]]) -> dict[str, Chip]:
+        lines: dict[str, Chip] = {}
+        for line in Constants.WIN_LINES:
+            first_tile: Chip | None = None
+            lost: bool = False
+            for pos in Constants.WIN_LINES[line]:
+                tile = tiles[pos[0]][pos[1]]
+                if first_tile is None or (first_tile.joker and not tile.joker):
+                    first_tile = tile
+                if first_tile.name != tile.name and not tile.joker:
+                    lost = True
+            if not lost:
+                lines[line] = first_tile
+        return lines
+
+    @staticmethod
+    def check_partial_wins(tiles: list[list[Chip]]) -> list[str]:
+        partial_wins: list[str] = []
+        for line in Constants.WIN_LINES:
+            first_tile: Chip | None = None
+            lost: bool = False
+            i: int = 0
+            for pos in Constants.WIN_LINES[line]:
+                if i >= 2:
+                    break
+                tile = tiles[pos[0]][pos[1]]
+                if first_tile is None or (first_tile.joker and not tile.joker):
+                    first_tile = tile
+                if first_tile.name != tile.name and not tile.joker:
+                    lost = True
+                i += 1
+            if not lost:
+                partial_wins.append(line)
+        return partial_wins
+
+    async def on_new_day(self, date_now: datetime):
+        for file in os.listdir('data/casino/'):
+            os.remove(f'data/casino/{file}')
