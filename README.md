@@ -7,7 +7,7 @@
 3. Activate the venv
 - `venv\Scripts\Activate.ps1` on Powershell (Windows)
 - `venv\Scripts\activate.bat` on cmd (Windows)
-- `source venv/Scripts/activate` on linux
+- `source venv/bin/activate` on linux
 4. Install the required packages:
 - `pip install -r requirements.txt`
 5. Create `.env` file on the project folder root, and add a line
