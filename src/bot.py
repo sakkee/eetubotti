@@ -32,6 +32,9 @@ class Bot:
     def __post_init__(self):
         if not os.path.exists(f'data'):
             os.mkdir(f'data')
+
+        if not os.path.exists(f'data/profile_images'):
+            os.mkdir(f'data/profile_images')
         self.refresh_modules()
         self.modules[1].name = "ircci"
         self.database = Database(self)
