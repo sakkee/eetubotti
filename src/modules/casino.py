@@ -1,6 +1,3 @@
-import asyncio
-import discord
-import json
 from dataclasses import field, dataclass
 from src.localizations import Localizations
 from src.objects import User
@@ -9,23 +6,21 @@ import src.functions as functions
 from .module import Module
 import os
 import discord
-import time
-from dotenv import load_dotenv
-import calendar
 import datetime
 import asyncio
 from PIL import Image, ImageDraw, ImageFont
 import string
 import random
 import json
+import shutil
 
 
 def get_filename(name: str, icon: bool = False) -> str:
     return f'assets/casino/{name}' if not icon else f'assets/casino/icons/{name}'
 
 
-def get_data_filename(name: str) -> str:
-    return f'data/casino/{name}'
+def get_data_filename(name: str, filetype: str = "png") -> str:
+    return f'data/casino/{name}.{filetype}'
 
 
 class Constants:
@@ -99,6 +94,8 @@ class Plugin(Module):
     casino_order: list[int] = None
     warned: bool = False
     chips: list[Chip] = field(default_factory=list)
+    casino_hide: discord.TextChannel = None  # the channel where to hide the images to make casino smooth
+    unpulled_casino_url: str = None  # link to the unpulled image of the casino
 
     def __post_init__(self):
         self.casino_order = [0, 1, 2, 3]
@@ -106,12 +103,16 @@ class Plugin(Module):
         if not os.path.exists(f'data/casino/'):
             os.mkdir(f'data/casino/')
 
+        shutil.copyfile(get_filename('unpulled.png'), 'data/casino/unpulled.png')
+
         with open(get_filename('pelimerkit.json')) as f:
             chips = json.load(f)
             for chip in chips:
                 self.chips.append(Chip(**chip))
 
     async def on_ready(self):
+        self.casino_hide = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
+
         @self.bot.commands.register(command_name='kasino', function=self.casino,
                                     description=Localizations.get('CASINO_DESCRIPTION'), commands_per_day=10,
                                     timeout=600)
@@ -126,11 +127,12 @@ class Plugin(Module):
                      interaction: discord.Interaction | None = None,
                      sum: int = Constants.MAX_AMOUNT,
                      **kwargs):
+        # parse betting sum
         play_amount: int = max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT)
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
-                # no sum
+                # no sum given
                 self.reset_cooldown(user)
                 await self.bot.commands.error(Localizations.get('CASINO_GUIDE'), message)
                 return
@@ -148,13 +150,12 @@ class Plugin(Module):
                     await self.bot.commands.error(Localizations.get('CASINO_GUIDE'), message)
                     return
 
+        # manage casino cooldown to prevent multiple casinos the same time on the same channel
         ts = functions.get_current_timestamp()
         ch_id: str = str(message.channel.id) if message else str(interaction.channel_id)
         u_id: str = str(message.author.id) if message else str(interaction.user.id)
-
         if ch_id not in self.casino_times:
             self.casino_times[ch_id] = 0
-
         if ts - self.casino_times[ch_id] <= 30 and int(u_id) != 623974457404293130:
             if not self.warned:
                 self.warned = True
@@ -162,13 +163,16 @@ class Plugin(Module):
             elif message:
                 await message.delete()
             return
-
-        self.warned = False
         self.casino_times[ch_id] = ts
+        self.warned = False
+
+        # roll casino, check wins and partial wins
         chosen_reels: list[list[Chip]] = self.get_chosen_tiles(self.chips)
         wins: dict[str, Chip] = self.check_wins(chosen_reels)
         partial_wins = self.check_partial_wins(chosen_reels)
-        files: list[str] = ['unpulled.png']
+
+        # build PIL images and save them on data/casino/
+        files: list[str] = [get_data_filename('unpulled')]
         win_screen: Image.Image | None = None
         for i in range(Constants.COLUMNS):
             if i == 1 and not partial_wins:
@@ -188,24 +192,15 @@ class Plugin(Module):
                     bg.paste(chosen_reels[col][row].file, Constants.TILE_POSITIONS[col][row])
             if i == Constants.COLUMNS - 1:
                 win_screen = bg
-                # if len(wins) == 0:
-                #    bg.paste(lost_image, (0, 0), lost_image)
-            fname = f'casino_{self.randomword(10)}.png'
-            filename = fname
-            # filename = "/var/www/html/kasino/" + fname
+            filename: str = get_data_filename(self.randomword(10))
             bg.save(filename, **bg.info)
-            files.append(fname)
-            # urls.append(fname)
-        amount = 0
+            files.append(filename)
+        amount: int = 0
+        filename: str = get_data_filename(self.randomword(10))
+        bg: Image.Image = win_screen.copy()
         if len(wins) == 0:
-            fname = f'casino_{self.randomword(10)}.png'
-            filename = fname
-            # filename = "/var/www/html/kasino/" + fname
-            bg: Image.Image = win_screen.copy()
             bg.paste(Images.lost_image, (0, 0), Images.lost_image)
-            bg.save(filename, **bg.info)
-            files.append(fname)
-        if len(wins) > 0:
+        else:
             bg: Image.Image = win_screen.copy()
             bg.paste(Images.won_image, (0, 0), Images.won_image)
             for win in wins:
@@ -216,34 +211,49 @@ class Plugin(Module):
             w, h = d.textsize(title_message, font=Images.font)
             d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
                    stroke_width=-1, stroke_fill=(0, 0, 0))
-            fname = get_data_filename(self.randomword(10))
-            filename = fname
-            #filename = "/var/www/html/kasino/" + fname
-            bg.save(filename, **bg.info)
-            files.append(fname)
+        bg.save(filename, **bg.info)
+        files.append(filename)
 
-        casino_hide: discord.client.GuildChannel = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
+        # respond to interaction
+        if interaction:
+            await interaction.response.send_message(Localizations.get("CASINO_LAUNCH").format(user.name),
+                                                    delete_after=5.0)
 
-        casino_post: discord.Message | None = None
-        i: int = 0
-        for file in files:
+        # build the image urls
+        # we need to first send the images on Discord (on a hidden channel), then post them again as Embeds
+        # this is needed to prevent glitching and making sure Discord has the images cached
+        urls: list[str] = []
+        if not self.unpulled_casino_url:
+            # unpulled image hasn't been posted...
+            post: discord.Message = await self.casino_hide.send(file=discord.File(files[0]))
+            self.unpulled_casino_url = post.attachments[0].url
             embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
                                   description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
-            embed.set_image(url='https://sakkee.org/kasino/' + file)
-            if interaction and i == 0:
-                await interaction.response.send_message(Localizations.get("CASINO_LAUNCH").format(user.name),
-                                                        delete_after=5.0)
-            if casino_post is None:
-                casino_post = await message.channel.send(embed=embed) if message else \
-                    await interaction.channel.send(embed=embed)
-            else:
-                await casino_post.edit(embed=embed)
-            if i == 0:
-                for f in files[1:]:
-                    embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                          description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
-                    embed.set_image(url='https://sakkee.org/kasino/' + f)
-                    await casino_hide.send(embed=embed, delete_after=1.0)
+            embed.set_image(url=self.unpulled_casino_url)
+            await self.casino_hide.send(embed=embed)
+            urls.append(self.unpulled_casino_url)
+        embed: discord.Embed = discord.Embed(
+            title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
+            description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+        embed.set_image(url=self.unpulled_casino_url)
+        casino_post: discord.Message = await message.channel.send(embed=embed) if message else \
+            await interaction.channel.send(embed=embed)
+        for f in files[1:]:
+            delete_after: int = 30 if (f != files[-1] or len(wins) == 0) else 0
+            post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
+            urls.append(post.attachments[0].url)
+            embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+            embed.set_image(url=post.attachments[0].url)
+            await self.casino_hide.send(embed=embed, delete_after=1.0)
+
+        # post the casino images to the user
+        i: int = 1
+        for url in urls[1:]:
+            embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+            embed.set_image(url=url)
+            await casino_post.edit(embed=embed)
             i += 1
             if i == len(files):
                 await asyncio.sleep(3)
@@ -266,6 +276,7 @@ class Plugin(Module):
             else:
                 await asyncio.sleep(4)
 
+        # reset cooldown
         self.casino_times[ch_id] = 0
         if len(wins) == 0:
             try:
@@ -281,7 +292,10 @@ class Plugin(Module):
             i += 1
             if i == len(files[1:]) and len(wins) > 0:
                 continue
+            # remove unnecessary files
             os.remove(file)
+
+        # user won negative sum, thus ban
         if amount < 0:
             await message.guild.ban(message.author, delete_message_days=0, reason='Megiskasino bän') if message else \
                 await interaction.guild.ban(interaction.user, delete_message_days=0, reason='Megiskasino bän')
@@ -368,4 +382,5 @@ class Plugin(Module):
 
     async def on_new_day(self, date_now: datetime):
         for file in os.listdir('data/casino/'):
-            os.remove(f'data/casino/{file}')
+            if 'unpulled' not in file:
+                os.remove(f'data/casino/{file}')

@@ -39,7 +39,6 @@ class Plugin(Module):
             self.loves[user.id] = self.bot.get_user_by_id(target_user.id)
             self.save_loves()
         if self.loves[user.id].id not in self.loves or self.loves[self.loves[user.id].id].id != user.id:
-            print()
             msg = Localizations.get('WRONG_LOVE').format(f'<@{user.id}>', user.name,
                                                          self.loves[user.id].name)
         else:
