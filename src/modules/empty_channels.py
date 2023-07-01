@@ -17,11 +17,10 @@ class Plugin(Module):
                 if channel.id not in PURGE_CHANNELS:
                     continue
                 try:
-                    print("Purging", channel.name)
                     while len(await channel.purge(check=self.is_three_hours_old, oldest_first=True)) > 0:
                         pass
                 except Exception as e:
-                    print("purge error", e)
+                    print("empty_channels: Error at purging", channel.name, e)
                     pass
 
     @staticmethod
