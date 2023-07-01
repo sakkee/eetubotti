@@ -199,15 +199,19 @@ class Plugin(Module):
             if not user.is_in_guild or user.id in IGNORE_LEVEL_USERS:
                 continue
             member: discord.Member = self.bot.server.get_member(user.id)
-            if ROLES.ACTIVE not in user.roles and user in active_users:
-                await member.add_roles(active_role)
+            try:
+                if ROLES.ACTIVE not in user.roles and user in active_users:
+                    await member.add_roles(active_role)
 
-            elif ROLES.ACTIVE in user.roles and user not in active_users:
-                await member.remove_roles(active_role)
+                elif ROLES.ACTIVE in user.roles and user not in active_users:
+                    await member.remove_roles(active_role)
 
-            if ROLES.HOMIE in user.roles and (time.time() - user.stats.last_post_time > 24 * 60 * 60 * 3
-                                              or ROLES.SQUAD not in user.roles):
-                await member.remove_roles(self.bot.server.get_role(ROLES.HOMIE))
+                if ROLES.HOMIE in user.roles and (time.time() - user.stats.last_post_time > 24 * 60 * 60 * 3
+                                                  or ROLES.SQUAD not in user.roles):
+                    await member.remove_roles(self.bot.server.get_role(ROLES.HOMIE))
+            except discord.errors.Forbidden:
+                print(f"Error! Could not edit {member.name} roles. Likely reason is that the bot's role is too low.")
+                print("Please make the bot's role the top-most role in the server.")
 
     async def on_member_join(self, member: discord.Member):
         user = self.bot.get_user_by_id(member.id)
@@ -344,7 +348,7 @@ class Plugin(Module):
         async for elem in self.bot.client.get_channel(CHANNELS.YLEINEN).history(limit=20000000):
             self.last_day = elem.created_at
             count += 1
-            if elem.id == last_post_id:
+            if elem.id < last_post_id:
                 break
             if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]:  # anttubot, etyty
                 continue

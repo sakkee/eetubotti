@@ -18,6 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 import string
 import random
 import json
+import shutil
 
 
 def get_filename(name: str, icon: bool = False) -> str:
@@ -106,6 +107,8 @@ class Plugin(Module):
         if not os.path.exists(f'data/casino/'):
             os.mkdir(f'data/casino/')
 
+        shutil.copyfile(get_filename('unpulled.png'), 'data/casino/unpulled.png')
+
         with open(get_filename('pelimerkit.json')) as f:
             chips = json.load(f)
             for chip in chips:
@@ -191,16 +194,16 @@ class Plugin(Module):
                 # if len(wins) == 0:
                 #    bg.paste(lost_image, (0, 0), lost_image)
             fname = f'casino_{self.randomword(10)}.png'
-            filename = fname
-            # filename = "/var/www/html/kasino/" + fname
+            #filename = fname
+            filename = "/var/www/html/kasino/" + fname
             bg.save(filename, **bg.info)
             files.append(fname)
             # urls.append(fname)
         amount = 0
         if len(wins) == 0:
             fname = f'casino_{self.randomword(10)}.png'
-            filename = fname
-            # filename = "/var/www/html/kasino/" + fname
+            #filename = fname
+            filename = "/var/www/html/kasino/" + fname
             bg: Image.Image = win_screen.copy()
             bg.paste(Images.lost_image, (0, 0), Images.lost_image)
             bg.save(filename, **bg.info)
@@ -216,7 +219,7 @@ class Plugin(Module):
             w, h = d.textsize(title_message, font=Images.font)
             d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
                    stroke_width=-1, stroke_fill=(0, 0, 0))
-            fname = get_data_filename(self.randomword(10))
+            fname = get_data_filename(self.randomword(10)) + ".png"
             filename = fname
             #filename = "/var/www/html/kasino/" + fname
             bg.save(filename, **bg.info)
@@ -281,7 +284,7 @@ class Plugin(Module):
             i += 1
             if i == len(files[1:]) and len(wins) > 0:
                 continue
-            os.remove(file)
+            os.remove("/var/www/html/kasino/"+file)
         if amount < 0:
             await message.guild.ban(message.author, delete_message_days=0, reason='Megiskasino bän') if message else \
                 await interaction.guild.ban(interaction.user, delete_message_days=0, reason='Megiskasino bän')
@@ -368,4 +371,5 @@ class Plugin(Module):
 
     async def on_new_day(self, date_now: datetime):
         for file in os.listdir('data/casino/'):
-            os.remove(f'data/casino/{file}')
+            if 'unpulled' not in file:
+                os.remove(f'data/casino/{file}')

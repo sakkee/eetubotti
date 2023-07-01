@@ -167,7 +167,8 @@ class Database:
         self.update_userstats()
         self.save_database()
 
-    def new_day(self):
+    def new_utc_day(self):
+        """Called when new day in UTC."""
         midnight: int = functions.dt2ts(functions.get_midnight())
         previous_midnight: int = functions.dt2ts(functions.get_midnight() - timedelta(days=1))
         mn: datetime = functions.get_midnight()

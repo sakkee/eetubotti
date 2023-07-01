@@ -28,6 +28,7 @@ class Bot:
     users_in_voice: list = field(default_factory=list)
     server: discord.Guild = None
     previous_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
+    last_day: datetime = datetime.today()
 
     def __post_init__(self):
         if not os.path.exists(f'data'):
@@ -103,7 +104,6 @@ class Bot:
                 new_user.set_roles(member.roles)
             self.users.append(new_user)
             self.database.add_user(new_user)
-            print(new_user.name, new_user.is_in_guild)
         else:
             user = self.get_user_by_id(member.id)
             if isinstance(member, discord.Member):
@@ -144,23 +144,30 @@ class Bot:
 
     async def on_new_day(self, date_now: datetime):
         self.previous_day = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
-        self.database.new_day()
         for module in self.modules:
             try:
                 await module.on_new_day(date_now)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_new_day: {e}")
 
     async def on_message(self, message: discord.Message):
         if self.launching:
             return
+
         if datetime.now(tz=gettz(DEFAULT_TIMEZONE)).date() != self.previous_day.date() and not self.launching:
+            # default timezone midnight
             await self.on_new_day(datetime.now(tz=gettz(DEFAULT_TIMEZONE)))
+
+        if message.created_at.date() != self.last_day.date() and not self.launching:
+            # UTC midnight
+            self.last_day = message.created_at
+            self.database.new_utc_day()
+
         for module in self.modules:
             try:
                 await module.on_message(message)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_message: {e}")
 
     async def on_ready(self):
         self.launching = False
@@ -170,7 +177,7 @@ class Bot:
             try:
                 await module.on_ready()
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_ready: {e}")
 
         self.database.save_database()
         self.database.sync_interval = 200
@@ -200,7 +207,7 @@ class Bot:
             try:
                 await module.on_member_join(member)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_member_join: {e}")
 
     async def on_member_remove(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
@@ -212,42 +219,42 @@ class Bot:
             try:
                 await module.on_member_remove(member)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_member_remove: {e}")
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         for module in self.modules:
             try:
                 await module.on_raw_reaction_add(payload)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_raw_reaction_add: {e}")
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         for module in self.modules:
             try:
                 await module.on_message_edit(before, after)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_message_edit: {e}")
 
     async def on_member_unban(self, guild: discord.Guild, user: discord.User):
         for module in self.modules:
             try:
                 await module.on_member_unban(guild, user)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_member_unban: {e}")
 
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):
         for module in self.modules:
             try:
                 await module.on_member_ban(guild, user)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_member_ban: {e}")
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         for module in self.modules:
             try:
                 await module.on_member_update(before, after)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_member_update: {e}")
 
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
                                     after: discord.VoiceState):
@@ -255,4 +262,4 @@ class Bot:
             try:
                 await module.on_voice_state_update(member, before, after)
             except Exception as e:
-                print(f"Module command failed: {e}")
+                print(f"Module {module.__class__.__module__} failed on_voice_state_update: {e}")
