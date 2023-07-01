@@ -297,6 +297,15 @@ class Plugin(Module):
 
         # user won negative sum, thus ban
         if amount < 0:
+            if message:
+                if self.bot.get_user_by_id(message.author.id).is_ban_protected():
+                    await message.channel.send("no enpä bännää ku äijä on suojeltu,,mulkku")
+                    return
+            else:
+                if self.bot.get_user_by_id(interaction.user.id).is_ban_protected():
+                    await interaction.channel.send("no enpä bännää ku äijä on suojeltu,,mulkku")
+                    return
+
             await message.guild.ban(message.author, delete_message_days=0, reason='Megiskasino bän') if message else \
                 await interaction.guild.ban(interaction.user, delete_message_days=0, reason='Megiskasino bän')
 
