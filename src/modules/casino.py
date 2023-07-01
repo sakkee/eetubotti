@@ -231,7 +231,7 @@ class Plugin(Module):
                                   description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
             embed.set_image(url=self.unpulled_casino_url)
             await self.casino_hide.send(embed=embed)
-            urls.append(self.unpulled_casino_url)
+        urls.append(self.unpulled_casino_url)
         embed: discord.Embed = discord.Embed(
             title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
             description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
