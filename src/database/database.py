@@ -203,13 +203,14 @@ class Database:
                 users[user_id] = Points(0, 0)
             users[user_id].voice_points += vd['act_points']
 
-        activity_dates: list = []
+        activity_dates: list[ActivityDate] = []
         print("Inserting activitydates...")
         for user in users:
             if not users[user].message_points and not users[user].voice_points:
                 continue
-            activity_dates.append(ActivityDate(int(user), p_mn.year, p_mn.month, p_mn.day, users[user].message_points,
-                                               users[user].voice_points))
+            activity_dates.append(ActivityDate(user_id=int(user), year=p_mn.year, month=p_mn.month, day=p_mn.day,
+                                               message_points=users[user].message_points,
+                                               voice_points=users[user].voice_points))
             self.cursor.execute(
                 "INSERT INTO ActivityDates (user_id, year, month, day, message_points, voice_points) " +
                 "VALUES (?, ?, ?, ?, ?, ?)",
@@ -220,7 +221,7 @@ class Database:
         usrs: list[User.id] = [x.user_id for x in activity_dates]
         for user in self.bot.users:
             if user.id not in usrs:
-                user.stats.add_activitydate(ActivityDate(user.id, p_mn.year, p_mn.month, p_mn.day, 0, 0))
+                user.stats.add_activitydate(ActivityDate(0, 0, user.id, p_mn.year, p_mn.month, p_mn.day))
             else:
                 for ad in activity_dates:
                     if ad.user_id == user.id:
