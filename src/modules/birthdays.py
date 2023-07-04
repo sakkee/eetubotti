@@ -67,6 +67,15 @@ class Plugin(Module):
                 birthday=f"{päivä}.{kuukausi}.{vuosi}"
             )
 
+        @self.bot.commands.register(command_name='synttärisankarit', function=self.next_birthdays,
+                                    description=Localizations.get('NEXT_BIRTHDAYS_DESCRIPTION'), commands_per_day=10,
+                                    timeout=10)
+        async def next_birthdays(interaction: discord.Interaction):
+            await self.bot.commands.commands['synttärisankarit'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
         await self.sync_birthdays(datetime.now(tz=gettz(DEFAULT_TIMEZONE)))
 
     async def birthday(self, user: User, message: discord.Message | None = None,
@@ -156,3 +165,38 @@ class Plugin(Module):
                         Localizations.get('BIRTHDAY_ANNOUNCE').format(member.mention),
                         file=discord.File(open('assets/birthdays/gondola_birthday.mp4', 'rb'),
                                           filename="synttarit.mp4"))
+
+    async def next_birthdays(self, user: User, message: discord.Message | None = None,
+                             interaction: discord.Interaction | None = None, **kwargs):
+        birthdays: list[tuple[int, datetime]] = [(x, datetime(2000, self.birthdays[x].month, self.birthdays[x].day))
+                                                 for x in self.birthdays if self.birthdays[x].year]
+        sorted_birthdays: list[tuple[int, datetime]] = sorted(birthdays, key=lambda x: x[1])
+        next_birthdays: list[int] = []
+        datenow = datetime.today()
+        for birthday in sorted_birthdays:
+            if birthday[1].month < datenow.month:
+                continue
+            if birthday[1].month == datenow.month and birthday[1].day < datenow.day:
+                continue
+            next_birthdays.append(birthday[0])
+            if len(next_birthdays) >= 10:
+                break
+        if len(next_birthdays) < 10:
+            for birthday in sorted_birthdays:
+                if birthday[1].month > datenow.month:
+                    break
+                if birthday[1].month == datenow.month and birthday[1].day > datenow.day:
+                    break
+                next_birthdays.append(birthday[0])
+                if len(next_birthdays) >= 10:
+                    break
+        only_10_birthdays: list[int] = next_birthdays[:10]
+        constructing_string = Localizations.get('NEXT_BIRTHDAYS_TITLE')
+        for user_id in only_10_birthdays:
+            user: User = self.bot.get_user_by_id(user_id)
+            if not user:
+                continue
+            birthday: Birthday = self.birthdays[user_id]
+            constructing_string += Localizations.get('NEXT_BIRTHDAYS_ROW').format(birthday.day, birthday.month,
+                                                                                  user.name)
+        await self.bot.commands.message(constructing_string, message, interaction)
