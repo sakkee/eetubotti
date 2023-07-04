@@ -1,3 +1,8 @@
+"""The database model used by Database class.
+
+Usage in Database.setup_database.
+"""
+
 from dataclasses import dataclass
 
 

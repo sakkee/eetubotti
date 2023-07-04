@@ -180,7 +180,6 @@ class Bot:
                 print(f"Module {module.__class__.__module__} failed on_ready: {e}")
 
         self.database.save_database()
-        self.database.sync_interval = 200
 
         @self.commands.register(command_name='reload_module', function=self.reload_module,
                                 description='Reload module', commands_per_day=200, timeout=5)
