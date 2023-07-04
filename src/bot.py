@@ -28,7 +28,7 @@ class Bot:
     users_in_voice: list = field(default_factory=list)
     server: discord.Guild = None
     previous_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
-    last_day: datetime = datetime.today()
+    last_day: datetime = datetime.utcnow()
 
     def __post_init__(self):
         if not os.path.exists(f'data'):
