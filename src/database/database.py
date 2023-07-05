@@ -394,8 +394,9 @@ class Database:
         Copy the self.unsaved_changes to copied_changes variable so the self.unsaved_changes changing while
         updating the database won't cause any errors.
         """
-        copied_changes: dict[str, list] = {x: self.unsaved_changes[x] for x in self.unsaved_changes}
+        copied_changes: dict[str, list] = {}
         for table in self.unsaved_changes:
+            copied_changes[table] = self.unsaved_changes[table].copy()
             self.unsaved_changes[table][:] = []
         for table in copied_changes:
             if len(copied_changes[table]) == 0:
