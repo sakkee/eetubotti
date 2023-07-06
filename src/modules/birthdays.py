@@ -179,24 +179,22 @@ class Plugin(Module):
             if birthday[1].month == datenow.month and birthday[1].day < datenow.day:
                 continue
             next_birthdays.append(birthday[0])
-            if len(next_birthdays) >= 10:
+        for birthday in sorted_birthdays:
+            if birthday[1].month > datenow.month:
                 break
-        if len(next_birthdays) < 10:
-            for birthday in sorted_birthdays:
-                if birthday[1].month > datenow.month:
-                    break
-                if birthday[1].month == datenow.month and birthday[1].day > datenow.day:
-                    break
-                next_birthdays.append(birthday[0])
-                if len(next_birthdays) >= 10:
-                    break
-        only_10_birthdays: list[int] = next_birthdays[:10]
+            if birthday[1].month == datenow.month and birthday[1].day > datenow.day:
+                break
+            next_birthdays.append(birthday[0])
+        counter: int = 1
         constructing_string = Localizations.get('NEXT_BIRTHDAYS_TITLE')
-        for user_id in only_10_birthdays:
+        for user_id in next_birthdays:
+            if counter > 10:
+                break
             user: User = self.bot.get_user_by_id(user_id)
-            if not user:
+            if not user or not user.is_in_guild:
                 continue
             birthday: Birthday = self.birthdays[user_id]
             constructing_string += Localizations.get('NEXT_BIRTHDAYS_ROW').format(birthday.day, birthday.month,
                                                                                   user.name)
+            counter += 1
         await self.bot.commands.message(constructing_string, message, interaction)

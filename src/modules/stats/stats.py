@@ -348,7 +348,7 @@ class Plugin(Module):
         async for elem in self.bot.client.get_channel(CHANNELS.YLEINEN).history(limit=20000000):
             self.last_day = elem.created_at
             count += 1
-            if elem.id < last_post_id:
+            if elem.id <= last_post_id:
                 break
             if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]:  # anttubot, etyty
                 continue
@@ -358,7 +358,7 @@ class Plugin(Module):
         async for elem in self.bot.client.get_channel(CHANNELS.YLEINEN2).history(limit=20000000):
             self.last_day = elem.created_at
             count += 1
-            if elem.id < last_post_id:
+            if elem.id <= last_post_id:
                 break
             if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]:  # anttubot, etyty
                 continue

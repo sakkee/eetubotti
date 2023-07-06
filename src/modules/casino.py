@@ -259,7 +259,7 @@ class Plugin(Module):
                 await asyncio.sleep(3)
                 if len(wins) > 0 and amount >= 0:
                     msg = await self.bot.commands.message(Localizations.get('CASINO_WIN').
-                                                          format(amount, self.bot.client.get_user(user.id).mention),
+                                                          format(self.bot.client.get_user(user.id).mention, amount),
                                                           message, interaction, channel_send=True)
                     await asyncio.sleep(2)
                 elif len(wins) > 0 > amount:
