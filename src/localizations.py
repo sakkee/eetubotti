@@ -49,7 +49,7 @@ Localizations: dict[str, str] = {
     "CASINO_WRONG_SUM": "Summan täytyy olla välillä {0}-{1} vitun huora :D",
     "CASINO_ONGOING": "kasino on kesken vittu :DD odota xdddd vitu adhd:_D",
     "CASINO_EMBED_TITLE": "{0}:n kasino :Dddd",
-    "CASINO_EMBED_DESCRIPTION": "Panos: {0}",
+    "CASINO_EMBED_DESCRIPTION": "Panos: {0}, saldo: {1}",
     "CASINO_WIN": "{0} ei vittu :Dddd äijä voitti **{1}** !! :DDD ONNEKS OLKOO :DDD",
     "CASINO_WIN_BAN": "{0} ei vittu :Dddd äijä voitti **BÄNNIT** !! :DDdd ONNEKS OLKOO :DD HUUTISTA",
     "CASINO_LOSE": "{0} HUUTISTA LUUSERILLE :DD äijä hävis :D etkö osaa ees pelaa :---D",
@@ -87,5 +87,8 @@ Localizations: dict[str, str] = {
     "MEMBER_UNTIMEOUT": "**{0}** voi taas kiusata teitä rip te :D",
     "MEMBER_MUTED": "**{0}** on mutetettu {1} tunniksi :D",
     "MEMBER_UNMUTED": "**{0}** on unmutetettu",
-    "NO_LINKS_IN_GENERAL": "Ei linkkejä tai mediaa yleiseen {0}! Voi tulla kick. Mene <#{1}>"
+    "NO_LINKS_IN_GENERAL": "Ei linkkejä tai mediaa yleiseen {0}! Voi tulla kick. Mene <#{1}>",
+    "BALANCE_DESCRIPTION": "Näyttää käyttäjän saldon",
+    "BALANCE_RESPONSE": "**{0}**:n saldo on {1}",
+    "TOO_LOW_BALANCE": "Huutista sun saldo on liian pieni, et pysty pelaa :D"
 }

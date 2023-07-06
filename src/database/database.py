@@ -78,7 +78,7 @@ class Database:
         print("Getting users from db...")
         db_users: list = self.db.select(
             table_name='User', values='*',
-            extra_args='JOIN UserStats ON User.id=UserStats.user_id ' +
+            join_query='JOIN UserStats ON User.id=UserStats.user_id ' +
                        'LEFT JOIN ActivityDates ON User.id=ActivityDates.user_id')
         users: dict[str, User] = {}
         for user in db_users:
@@ -268,7 +268,7 @@ class Database:
         """Add User.stats to the self.unsaved_changes if they should be updated in the database."""
         user_id_list = [x.user_id for x in self.unsaved_changes['UserStats']]
         for user in self.bot.users:
-            if not user.stats.should_update or user.id in user_id_list:
+            if user.stats.should_update and user.id not in user_id_list:
                 self.unsaved_changes['UserStats'].append(user.stats)
 
     def add_message(self, message: Message):
@@ -327,29 +327,27 @@ class Database:
                                    'activity_points': elem.activity_points})
 
         elif table == 'UserStats':
-            try:
-                if not elem.is_in_database:
-                    self.db.insert(table, {
-                        'user_id': elem.user_id, 'time_in_voice': elem.time_in_voice, 'points': elem.points,
-                        'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
-                        'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
-                        'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
-                        'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
-                        'last_post_time': elem.last_post_time
-                    })
-                elif elem.should_update:
-                    self.db.update(table, set_values={
-                        'time_in_voice': elem.time_in_voice, 'points': elem.points,
-                        'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
-                        'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
-                        'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
-                        'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
-                        'last_post_time': elem.last_post_time
-                    }, where={'user_id': elem.user_id})
+            if not elem.is_in_database:
+                if self.db.insert(table, {
+                    'user_id': elem.user_id, 'time_in_voice': elem.time_in_voice, 'points': elem.points,
+                    'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
+                    'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
+                    'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
+                    'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
+                    'last_post_time': elem.last_post_time
+                }):
+                    elem.is_in_database = True
+            elif elem.should_update:
+                self.db.update(table, set_values={
+                    'time_in_voice': elem.time_in_voice, 'points': elem.points,
+                    'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
+                    'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
+                    'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
+                    'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
+                    'last_post_time': elem.last_post_time
+                }, where={'user_id': elem.user_id})
                 elem.is_in_database = True
-                elem.should_update = False
-            except sqlite3.IntegrityError as e:
-                pass
+            elem.should_update = False
 
     def save_database(self):
         """Save the database. Called every 5 minute (at minimum by Bot object).

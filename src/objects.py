@@ -41,6 +41,7 @@ class User:
         """
         self.stats.points += points
         self.stats.activity_points_today += points
+        self.stats.should_update = True
         return self.level == self.refresh_level()
 
     def is_ban_protected(self) -> bool:

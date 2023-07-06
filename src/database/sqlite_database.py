@@ -11,7 +11,7 @@ class SqliteDatabase:
     """
     Handles all the communication with sqlite3. Only Database class should use this one.
 
-    Typical usage:
+    Examples:
         sqlite3db = SqliteDatabase()
         sqlite3db.insert('User', {'id': 23232, 'name': 'Ebin', ...})
         sqlite3db.save()
@@ -49,12 +49,12 @@ class SqliteDatabase:
             if i > 0:
                 columns_and_types += ', '
             columns_and_types += columns[i].name + " " + columns[i].type
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS " + table_name + " (" + columns_and_types + ");")
+        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_and_types});")
         self.save()
 
     def select(self, table_name: str, values: list[str] | str, where: dict[str, Any] | None = None,
                group_by: str | list[str] = None, order_by: str | list[str] = None,
-               extra_args: str = "", fetchall: bool = True, desc: bool = False) -> list:
+               join_query: str = "", fetchall: bool = True, desc: bool = False) -> list:
         """Select query.
 
         Args:
@@ -63,7 +63,7 @@ class SqliteDatabase:
             where (dict[str, Any] | None): where query, usage: {'user_id IN': [12, 3], 'name =': 'eeddspeaks'} etc.
             group_by (str | list[str]): GROUP BY param. usage: group_by='year', or group_by=['year', 'month', 'day']
             order_by (str | list[str]): ORDER BY param. usage: order_by='year', or order_by=['year', 'month', 'day']
-            extra_args: str: extra arguments passed to the query after WHERE clause.
+            join_query (str): SQL join query.
             fetchall (bool): if True, then fetchall() used, else fetchone() used.
             desc (bool): if True, add 'DESC' in the end of the query.
 
@@ -74,7 +74,7 @@ class SqliteDatabase:
             select('Messages', ['id', 'attachments'], {'user_id IN': [323232, 502323})
             select('Reactions', '*', order_by='message_id', desc=True)
             select('Messages', 'MAX(id)', fetchall=False)
-            select('User', '*', extra_args='JOIN UserStats ON User.id=UserStats.user_id LEFT JOIN ActivityDates ON ' +
+            select('User', '*', join_query='JOIN UserStats ON User.id=UserStats.user_id LEFT JOIN ActivityDates ON ' +
                 'User.id=ActivityDates.user_id')
             select('ActivityDates', ['year', 'month', 'day'], group_by=['year', 'month', 'day'],
                 order_by=['year', 'month', 'day'])
@@ -97,7 +97,7 @@ class SqliteDatabase:
                     query += f"{key} ? "
                 extra_values += extra_values + (where[key],) if not isinstance(where[key], list) and \
                                                                not isinstance(where[key], tuple) else tuple(where[key])
-        query += f"{extra_args}"
+        query += f"{join_query}"
         if group_by:
             query += f"GROUP BY {', '.join(group_by) if isinstance(group_by, list) else group_by} "
         if order_by:
@@ -147,10 +147,13 @@ class SqliteDatabase:
         for key in set_values:
             query += f"{key}=?" if i == 0 else f", {key}=?"
             values += set_values[key],
+            i += 1
         if where:
             query += " WHERE "
             i = 0
             for key in where:
-                query += f"{key}=?" if i == 0 else f" AND {key}=?"
+                query += f"{key}=? " if i == 0 else f" AND {key}=? "
                 values += where[key],
+                i += 1
+
         self.cursor.execute(query, values)
