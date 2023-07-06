@@ -33,6 +33,7 @@ class Constants:
     ROWS: int = 3
     COLUMNS: int = 3
     MAXIMUM: int = 32
+    POINTS_TO_BALANCE_MULTIPLIER: int = 10
 
     WIN_LINES: dict[str, list[tuple[int, int]]] = {
         '1': [(0, 1), (1, 1), (2, 1)],
@@ -91,18 +92,16 @@ class Chip:
 @dataclass
 class Plugin(Module):
     casino_times: dict = field(default_factory=dict)
-    casino_order: list[int] = None
+    casino_order: list[int] = field(default_factory=lambda: [0, 1, 2, 3])
     warned: bool = False
     chips: list[Chip] = field(default_factory=list)
     casino_hide: discord.TextChannel = None  # the channel where to hide the images to make casino smooth
     unpulled_casino_url: str = None  # link to the unpulled image of the casino
+    balances: dict[int, dict[str, int]] = field(default_factory=lambda: {})
 
     def __post_init__(self):
-        self.casino_order = [0, 1, 2, 3]
-
         if not os.path.exists(f'data/casino/'):
             os.mkdir(f'data/casino/')
-
         shutil.copyfile(get_filename('unpulled.png'), 'data/casino/unpulled.png')
 
         with open(get_filename('pelimerkit.json')) as f:
@@ -111,6 +110,11 @@ class Plugin(Module):
                 self.chips.append(Chip(**chip))
 
     async def on_ready(self):
+        if not os.path.exists(get_data_filename('balances', 'json')):
+            self.init_balances()
+        else:
+            self.load_balances()
+
         self.casino_hide = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
 
         @self.bot.commands.register(command_name='kasino', function=self.casino,
@@ -123,12 +127,38 @@ class Plugin(Module):
                 sum=summa
             )
 
+        @self.bot.commands.register(command_name='saldo', function=self.balance,
+                                    description=Localizations.get('BALANCE_DESCRIPTION'), commands_per_day=20,
+                                    timeout=10)
+        async def balance(interaction: discord.Interaction, käyttäjä: discord.User = None):
+            await self.bot.commands.commands['saldo'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction,
+                target_user=käyttäjä
+            )
+
+    async def balance(self, user: User, message: discord.Message | None = None,
+                      interaction: discord.Interaction | None = None, target_user: User | None = None):
+        if not target_user:
+            await self.bot.commands.error(Localizations.get('USER_NOT_FOUND'), message, interaction)
+            return
+        if target_user.id not in self.balances:
+            self.balances[target_user.id] = {'points': self.user_points_to_balance(target_user.stats.points),
+                                             'reduce_points': self.user_points_to_balance(target_user.stats.points)}
+        await self.bot.commands.message(
+            Localizations.get('BALANCE_RESPONSE').format(target_user.name,
+                                                         '{:,}'.format(self.get_user_balance(target_user))),
+            message, interaction)
+
     async def casino(self, user: User, message: discord.Message | None = None,
                      interaction: discord.Interaction | None = None,
                      sum: int = Constants.MAX_AMOUNT,
                      **kwargs):
         # parse betting sum
-        play_amount: int = max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT)
+        play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
+        if play_amount < Constants.MIN_AMOUNT:
+            await self.bot.commands.error(Localizations.get('TOO_LOW_BALANCE'), message, interaction)
+            return
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
@@ -170,6 +200,8 @@ class Plugin(Module):
         chosen_reels: list[list[Chip]] = self.get_chosen_tiles(self.chips)
         wins: dict[str, Chip] = self.check_wins(chosen_reels)
         partial_wins = self.check_partial_wins(chosen_reels)
+
+        self.balances[user.id]['points'] -= play_amount
 
         # build PIL images and save them on data/casino/
         files: list[str] = [get_data_filename('unpulled')]
@@ -228,13 +260,15 @@ class Plugin(Module):
             post: discord.Message = await self.casino_hide.send(file=discord.File(files[0]))
             self.unpulled_casino_url = post.attachments[0].url
             embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION')
+                                  .format(play_amount, self.get_user_balance(user) + play_amount))
             embed.set_image(url=self.unpulled_casino_url)
             await self.casino_hide.send(embed=embed)
         urls.append(self.unpulled_casino_url)
         embed: discord.Embed = discord.Embed(
             title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-            description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+            description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount,
+                                                                             self.get_user_balance(user) + play_amount))
         embed.set_image(url=self.unpulled_casino_url)
         casino_post: discord.Message = await message.channel.send(embed=embed) if message else \
             await interaction.channel.send(embed=embed)
@@ -243,7 +277,8 @@ class Plugin(Module):
             post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
             urls.append(post.attachments[0].url)
             embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION')
+                                  .format(play_amount, self.get_user_balance(user) + play_amount))
             embed.set_image(url=post.attachments[0].url)
             await self.casino_hide.send(embed=embed, delete_after=1.0)
 
@@ -251,7 +286,9 @@ class Plugin(Module):
         i: int = 1
         for url in urls[1:]:
             embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount))
+                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION')
+                                  .format(play_amount, self.get_user_balance(user) + play_amount if i < len(files) - 1 \
+                                      else self.get_user_balance(user) + amount))
             embed.set_image(url=url)
             await casino_post.edit(embed=embed)
             i += 1
@@ -259,7 +296,8 @@ class Plugin(Module):
                 await asyncio.sleep(3)
                 if len(wins) > 0 and amount >= 0:
                     msg = await self.bot.commands.message(Localizations.get('CASINO_WIN').
-                                                          format(self.bot.client.get_user(user.id).mention, amount),
+                                                          format(self.bot.client.get_user(user.id).mention,
+                                                                 '{:,}'.format(amount)),
                                                           message, interaction, channel_send=True)
                     await asyncio.sleep(2)
                 elif len(wins) > 0 > amount:
@@ -295,6 +333,8 @@ class Plugin(Module):
             # remove unnecessary files
             os.remove(file)
 
+        self.balances[user.id]['points'] += amount
+        self.save_balances()
         # user won negative sum, thus ban
         if amount < 0:
             if message:
@@ -391,5 +431,41 @@ class Plugin(Module):
 
     async def on_new_day(self, date_now: datetime):
         for file in os.listdir('data/casino/'):
-            if 'unpulled' not in file:
+            if 'unpulled' not in file and '.png' in file:
                 os.remove(f'data/casino/{file}')
+
+    def init_balances(self):
+        """Balances.json was not found; thus we create the balances.
+
+        On default, balances are gotten from the user points.
+        """
+        for user in self.bot.users:
+            self.balances[user.id] = {'points': self.user_points_to_balance(user.stats.points),
+                                      'reduce_points': self.user_points_to_balance(user.stats.points)}
+        self.save_balances()
+
+    def save_balances(self):
+        with open(get_data_filename('balances', 'json'), 'w') as f:
+            balances: dict[str, dict[str, int]] = {}
+            for user_id in self.balances:
+                balances[str(user_id)] = self.balances[user_id]
+            json.dump(balances, f)
+
+    def load_balances(self):
+        with open(get_data_filename('balances', 'json'), 'r') as f:
+            balances = json.load(f)
+            for user_id in balances:
+                self.balances[int(user_id)] = balances[user_id]
+
+    async def on_member_join(self, member: discord.Member):
+        if member.id not in self.balances:
+            self.balances[member.id] = {'points': 0, 'reduce_points': 0}
+
+    @staticmethod
+    def user_points_to_balance(points: int) -> int:
+        return points * Constants.POINTS_TO_BALANCE_MULTIPLIER
+
+    def get_user_balance(self, user: User) -> int:
+        return self.balances[user.id].get('points') \
+            - self.balances[user.id].get('reduce_points') \
+            + self.user_points_to_balance(user.stats.points)
