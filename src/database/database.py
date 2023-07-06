@@ -3,14 +3,13 @@ import sqlite3
 from .database_model import database_model
 from src.objects import *
 import src.functions as functions
+from .sqlite_database import SqliteDatabase
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.bot import Bot
-
-DATABASE_NAME: str = "data/kristitty.db"
 
 
 @dataclass
@@ -24,21 +23,13 @@ class Database:
 
     Attributes:
         bot (Bot): The main Bot object.
-        connection (sqlite3.Connection): sqlite3 database connection.
-        cursor (sqlite3.Cursor): sqlite3 database cursor.
         unsaved_changes (dict[str, list]): this object tracks the unsaved changes that are to be updated to the database
             {tablename: [object1, object2, ...]}.
+        db (SqliteDatabase): Handles the communication with sqlite3 and the database file.
     """
     bot: Bot
-    connection: sqlite3.Connection = None
-    cursor: sqlite3.Cursor = None
     unsaved_changes: dict[str, list] = field(default_factory=dict)
-
-    def __post_init__(self):
-        """Establish the database connection."""
-        self.connection = sqlite3.connect(DATABASE_NAME)
-        self.connection.row_factory = sqlite3.Row
-        self.cursor = self.connection.cursor()
+    db: SqliteDatabase = field(default_factory=lambda: SqliteDatabase())
 
     def setup_database(self):
         """Setup the database according to database_model.database_model.
@@ -51,28 +42,9 @@ class Database:
         print("Setupping database")
         for table in database_model:
             self.unsaved_changes[table.name] = []  # init the table names to unsaved_changes
-            columns_and_types: str = ""
-            values: str = ""
-            columns: str = ""
-            questions: str = ""
-            vals = ()
-            for i in range(len(table.columns)):
-                if i > 0:
-                    columns += ", "
-                    columns_and_types += ", "
-                    values += ", "
-                    questions += ", "
-                questions += "?"
-                columns_and_types += table.columns[i].name + " " + table.columns[i].type
-                if table.columns[i].default is None:
-                    values += "null"
-                else:
-                    values += table.columns[i].default
-                vals += table.columns[i].default,
-                columns += table.columns[i].name
-            self.cursor.execute("CREATE TABLE IF NOT EXISTS " + table.name + " (" + columns_and_types + ");")
+            self.db.create_table(table.name, table.columns)
 
-        self.connection.commit()
+        self.db.save()
         print("Database setupped!")
 
     def get_reactions(self) -> list[Reaction]:
@@ -82,8 +54,7 @@ class Database:
             A list of Reaction objects initialized from the Reactions table.
         """
         print("Fetching reactions from db...")
-        self.cursor.execute("SELECT * from Reactions ORDER BY message_id DESC")
-        reactions: list = self.cursor.fetchall()
+        reactions: list = self.db.select(table_name='Reactions', values='*', order_by='message_id', desc=True)
         reacts: list[Reaction] = [Reaction(x['message_id'], x['emoji_id'], x['count'], True) for x in reactions]
         print("Reactions fetched")
         return reacts
@@ -94,9 +65,7 @@ class Database:
         Returns:
             0 if no last post id found from Messages else MAX(id) from Messages table.
         """
-
-        self.cursor.execute("SELECT MAX(id) FROM Messages")
-        return self.cursor.fetchone()[0] or 0
+        return self.db.select(table_name='Messages', values='MAX(id)', fetchall=False)[0] or 0
 
     def get_users(self) -> list[User]:
         """Get users from the database.
@@ -107,11 +76,10 @@ class Database:
             A list of User objects from the database that have their stats and activity dates initialized.
         """
         print("Getting users from db...")
-        self.cursor.execute("SELECT * " +
-                            "FROM User " +
-                            "JOIN UserStats ON User.id=UserStats.user_id " +
-                            "LEFT JOIN ActivityDates ON User.id=ActivityDates.user_id;")
-        db_users: list = self.cursor.fetchall()
+        db_users: list = self.db.select(
+            table_name='User', values='*',
+            extra_args='JOIN UserStats ON User.id=UserStats.user_id ' +
+                       'LEFT JOIN ActivityDates ON User.id=ActivityDates.user_id')
         users: dict[str, User] = {}
         for user in db_users:
             user_id = str(user["user_id"])
@@ -171,12 +139,8 @@ class Database:
            A list of messages from the database according to the user_id variable.
         """
         user_id: list[int] = [user_id] if isinstance(user_id, int) else user_id
-        self.cursor.execute(
-            f"SELECT id, attachments FROM Messages WHERE user_id IN ({','.join(['?'] * len(user_id))})",
-            user_id
-        )
         messages: list[dict[str, int | str]] = []
-        for msg in self.cursor.fetchall():
+        for msg in self.db.select(table_name='Messages', values=['id', 'attachments'], where={'user_id IN': user_id}):
             messages.append({
                 'id': msg['id'],
                 'attachments': msg['attachments']
@@ -190,9 +154,11 @@ class Database:
             A list of date dicts. Example:
             [{'year': 2023, 'month': 6, 'day': 30}, {'year': 2023, 'month': 6, 'day': 29}, ...]
         """
-        self.cursor.execute(
-            "SELECT year, month, day FROM ActivityDates GROUP BY year, month, day ORDER BY year, month, day")
-        val: list = self.cursor.fetchall()
+        val: list = self.db.select(
+            table_name='ActivityDates',
+            values=['year', 'month', 'day'],
+            group_by=['year', 'month', 'day'],
+            order_by=['year', 'month', 'day'])
         daylist: list = []
         dt: datetime = functions.get_midnight()
         curr_day: dict = {'year': dt.year, 'month': dt.month, 'day': dt.day}
@@ -232,11 +198,15 @@ class Database:
             self.bot.daylist.append({'year': midnight.year, 'month': midnight.month, 'day': midnight.day})
 
         # get message points for the previous day
-        self.cursor.execute(
-            "SELECT user_id, SUM(activity_points) as act_points " +
-            "FROM Messages WHERE created_at>=? AND created_at<? GROUP BY user_id;",
-            (previous_midnight_timestamp, midnight_timestamp))
-        messages: list = self.cursor.fetchall()
+        messages: list = self.db.select(
+            table_name='Messages',
+            values=['user_id', 'SUM(activity_points) as act_points'],
+            where={
+                'created_at >=': previous_midnight_timestamp,
+                'created_at <': midnight_timestamp
+            },
+            group_by='user_id'
+        )
         users: dict[str, Points] = {}
         for msg in messages:
             user_id: str = str(msg['user_id'])
@@ -245,10 +215,15 @@ class Database:
             users[user_id].message_points += msg['act_points'] or 0
 
         # get voice points for the previous day
-        self.cursor.execute("SELECT user_id, SUM(activity_points) as act_points " +
-                            "FROM VoiceDates WHERE end_time>=? AND end_time<? GROUP BY user_id;",
-                            (previous_midnight_timestamp, midnight_timestamp))
-        voice_dates: list = self.cursor.fetchall()
+        voice_dates: list = self.db.select(
+            table_name='VoiceDates',
+            values=['user_id', 'SUM(activity_points) as act_points'],
+            where={
+                'end_time >=': previous_midnight_timestamp,
+                'end_time <': midnight_timestamp
+            },
+            group_by='user_id'
+        )
         for vd in voice_dates:
             user_id: str = str(vd['user_id'])
             if user_id not in users:
@@ -267,12 +242,14 @@ class Database:
                                                day=previous_midnight.day,
                                                message_points=users[user].message_points,
                                                voice_points=users[user].voice_points))
-            self.cursor.execute(
-                "INSERT INTO ActivityDates (user_id, year, month, day, message_points, voice_points) " +
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (int(user), previous_midnight.year, previous_midnight.month, previous_midnight.day,
-                 users[user].message_points, users[user].voice_points))
-        self.connection.commit()  # update the database
+            self.db.insert(
+                'ActivityDates',
+                {
+                    'user_id': int(user), 'year': previous_midnight.year, 'month': previous_midnight.month,
+                    'day': previous_midnight.day, 'message_points': users[user].message_points,
+                    'voice_points': users[user].voice_points
+                })
+        self.db.save()  # update the database
 
         # add new previous day's activity date to the users
         print("Adding user activitydates...")
@@ -319,70 +296,56 @@ class Database:
             table (str): The name of the table.
             elem (User | Reaction | Message | VoiceDate | Stats): Element to be updated or inserted into the databse.
         """
-
         if table == 'User':
             if not elem.is_in_database:
-                try:
-                    self.cursor.execute(
-                        "INSERT INTO " + table + " (id, name, bot, profile_filename, identifier) VALUES (?, ?, ?, ?,?)",
-                        (elem.id, elem.name, elem.bot, elem.profile_filename, elem.identifier))
+                if self.db.insert(table, {'id': elem.id, 'name': elem.name, 'bot': elem.bot,
+                                          'profile_filename': elem.profile_filename, 'identifier': elem.identifier}):
                     elem.is_in_database = True
-                except sqlite3.IntegrityError as e:
-                    pass
-                elem.is_in_database = True
             else:
-                self.cursor.execute(
-                    "UPDATE " + table + " SET name=?, profile_filename=?, identifier=? WHERE id=?;",
-                    (elem.name, elem.profile_filename, elem.identifier, elem.id))
+                self.db.update(table,
+                               set_values={'name': elem.name, 'profile_filename': elem.profile_filename,
+                                           'identifier': elem.identifier},
+                               where={'id': elem.id})
 
         elif table == 'Reactions':
             if not elem.is_in_database:
-                self.cursor.execute("INSERT INTO " + table + " (message_id, emoji_id, count) VALUES (?, ?, ?)",
-                                    (elem.message_id, elem.emoji_id, elem.count))
+                self.db.insert(table, {'message_id': elem.message_id, 'emoji_id': elem.emoji_id, 'count': elem.count})
             else:
-                self.cursor.execute("UPDATE " + table + " SET count=? WHERE message_id=? AND emoji_id=?",
-                                    (elem.count, elem.message_id, elem.emoji_id))
+                self.db.update(table, {'count': elem.count}, {'message_id': elem.message_id, 'emoji_id': elem.emoji_id})
             elem.is_in_database = True
 
         elif table == 'Messages':
-            try:
-                self.cursor.execute(
-                    "INSERT INTO " + table + " (id, attachments, user_id, jump_url, reference, created_at, " +
-                    "mentions_everyone, mentioned_user_id, length, is_gif, has_emoji, " +
-                    "is_bot_command, activity_points) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (elem.id, elem.attachments, elem.user_id, elem.jump_url, elem.reference,
-                     elem.created_at.timestamp(), elem.mentions_everyone, elem.mentioned_user_id,
-                     elem.length, elem.is_gif, elem.has_emoji, elem.is_bot_command, elem.activity_points))
-            except sqlite3.IntegrityError as e:
-                pass
+            self.db.insert(table,
+                           {'id': elem.id, 'attachments': elem.attachments, 'user_id': elem.user_id,
+                            'jump_url': elem.jump_url, 'reference': elem.reference,
+                            'created_at': elem.created_at.timestamp(), 'mentions_everyone': elem.mentions_everyone,
+                            'length': elem.length, 'is_gif': elem.is_gif, 'has_emoji': elem.has_emoji,
+                            'is_bot_command': elem.is_bot_command, 'activity_points': elem.activity_points})
 
         elif table == 'VoiceDates':
-            self.cursor.execute(
-                "INSERT INTO " + table + " (user_id, start_time, end_time, activity_points) VALUES (?, ?, ?, ?)",
-                (elem.user_id, elem.start_time, elem.end_time, elem.activity_points))
+            self.db.insert(table, {'user_id': elem.user_id, 'start_time': elem.start_time, 'end_time': elem.end_time,
+                                   'activity_points': elem.activity_points})
 
         elif table == 'UserStats':
             try:
                 if not elem.is_in_database:
-                    self.cursor.execute(
-                        "INSERT INTO " + table + " (user_id, time_in_voice, points, first_post_time, gif_count, " +
-                        "emoji_count, bot_command_count, total_post_length, mentioned_times, " +
-                        "files_sent, longest_streak, last_post_time) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
-                            elem.user_id, elem.time_in_voice, elem.points, elem.first_post_time, elem.gif_count,
-                            elem.emoji_count, elem.bot_command_count, elem.total_post_length, elem.mentioned_times,
-                            elem.files_sent, elem.longest_streak, elem.last_post_time))
+                    self.db.insert(table, {
+                        'user_id': elem.user_id, 'time_in_voice': elem.time_in_voice, 'points': elem.points,
+                        'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
+                        'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
+                        'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
+                        'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
+                        'last_post_time': elem.last_post_time
+                    })
                 elif elem.should_update:
-                    self.cursor.execute(
-                        "UPDATE " + table + " SET time_in_voice=?, points=?, first_post_time=?, gif_count=?, " +
-                        "emoji_count=?, bot_command_count=?, total_post_length=?, " +
-                        "mentioned_times=?, files_sent=?, longest_streak=?, last_post_time=? " +
-                        "WHERE user_id=?", (
-                            elem.time_in_voice, elem.points, elem.first_post_time, elem.gif_count, elem.emoji_count,
-                            elem.bot_command_count, elem.total_post_length, elem.mentioned_times, elem.files_sent,
-                            elem.longest_streak, elem.last_post_time, elem.user_id))
-
+                    self.db.update(table, set_values={
+                        'time_in_voice': elem.time_in_voice, 'points': elem.points,
+                        'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
+                        'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
+                        'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
+                        'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
+                        'last_post_time': elem.last_post_time
+                    }, where={'user_id': elem.user_id})
                 elem.is_in_database = True
                 elem.should_update = False
             except sqlite3.IntegrityError as e:
@@ -403,4 +366,4 @@ class Database:
                 continue
             for elem in copied_changes[table]:
                 self.update_database(table, elem)
-        self.connection.commit()
+        self.db.save()
