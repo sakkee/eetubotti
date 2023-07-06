@@ -268,7 +268,7 @@ class Database:
         """Add User.stats to the self.unsaved_changes if they should be updated in the database."""
         user_id_list = [x.user_id for x in self.unsaved_changes['UserStats']]
         for user in self.bot.users:
-            if not user.stats.should_update or user.id in user_id_list:
+            if user.stats.should_update and user.id not in user_id_list:
                 self.unsaved_changes['UserStats'].append(user.stats)
 
     def add_message(self, message: Message):

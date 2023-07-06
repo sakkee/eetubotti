@@ -147,10 +147,13 @@ class SqliteDatabase:
         for key in set_values:
             query += f"{key}=?" if i == 0 else f", {key}=?"
             values += set_values[key],
+            i += 1
         if where:
             query += " WHERE "
             i = 0
             for key in where:
-                query += f"{key}=?" if i == 0 else f" AND {key}=?"
+                query += f"{key}=? " if i == 0 else f" AND {key}=? "
                 values += where[key],
+                i += 1
+
         self.cursor.execute(query, values)
