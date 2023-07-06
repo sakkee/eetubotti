@@ -78,7 +78,7 @@ class Database:
         print("Getting users from db...")
         db_users: list = self.db.select(
             table_name='User', values='*',
-            extra_args='JOIN UserStats ON User.id=UserStats.user_id ' +
+            join_query='JOIN UserStats ON User.id=UserStats.user_id ' +
                        'LEFT JOIN ActivityDates ON User.id=ActivityDates.user_id')
         users: dict[str, User] = {}
         for user in db_users:
