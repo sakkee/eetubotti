@@ -327,29 +327,27 @@ class Database:
                                    'activity_points': elem.activity_points})
 
         elif table == 'UserStats':
-            try:
-                if not elem.is_in_database:
-                    self.db.insert(table, {
-                        'user_id': elem.user_id, 'time_in_voice': elem.time_in_voice, 'points': elem.points,
-                        'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
-                        'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
-                        'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
-                        'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
-                        'last_post_time': elem.last_post_time
-                    })
-                elif elem.should_update:
-                    self.db.update(table, set_values={
-                        'time_in_voice': elem.time_in_voice, 'points': elem.points,
-                        'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
-                        'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
-                        'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
-                        'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
-                        'last_post_time': elem.last_post_time
-                    }, where={'user_id': elem.user_id})
+            if not elem.is_in_database:
+                if self.db.insert(table, {
+                    'user_id': elem.user_id, 'time_in_voice': elem.time_in_voice, 'points': elem.points,
+                    'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
+                    'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
+                    'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
+                    'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
+                    'last_post_time': elem.last_post_time
+                }):
+                    elem.is_in_database = True
+            elif elem.should_update:
+                self.db.update(table, set_values={
+                    'time_in_voice': elem.time_in_voice, 'points': elem.points,
+                    'first_post_time': elem.first_post_time, 'gif_count': elem.gif_count,
+                    'emoji_count': elem.emoji_count, 'bot_command_count': elem.bot_command_count,
+                    'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
+                    'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
+                    'last_post_time': elem.last_post_time
+                }, where={'user_id': elem.user_id})
                 elem.is_in_database = True
-                elem.should_update = False
-            except sqlite3.IntegrityError as e:
-                pass
+            elem.should_update = False
 
     def save_database(self):
         """Save the database. Called every 5 minute (at minimum by Bot object).
