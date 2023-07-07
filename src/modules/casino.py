@@ -152,7 +152,8 @@ class Plugin(Module):
         sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: -tup[1])[:10]
         msg: str = Localizations.get('BALANCES_TITLE')
         for i in range(len(sorted_balance_list)):
-            msg += Localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0], sorted_balance_list[i][1])
+            msg += Localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0],
+                                                            '{:,}'.format(sorted_balance_list[i][1]))
         await self.bot.commands.message(msg, message, interaction, delete_after=25)
 
     async def balance(self, user: User, message: discord.Message | None = None,
