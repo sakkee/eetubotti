@@ -136,7 +136,8 @@ class Plugin(Module):
             try:
                 del self.ban_list[user]
                 await self.bot.server.unban(user)
-                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('UNBANNED_MEMBER'))
+                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(
+                    Localizations.get('UNBANNED_MEMBER').format(user.name))
             except Exception as e:
                 print("couldnt unban", e)
                 await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('ON_ERROR'))

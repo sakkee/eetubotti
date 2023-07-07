@@ -47,13 +47,15 @@ class CHANNELS:
 
 
 PURGE_CHANNELS: list[int] = [CHANNELS.BOTTIKOMENNOT, CHANNELS.MEDIA]
+LEVEL_CHANNELS: list[int] = [CHANNELS.YLEINEN, CHANNELS.YLEINEN2]
 DEFAULT_BAN_LENGTH: int = 18  # hours
 DIRTHDAY_UPDATE_INTERVAL: int = 6 * 30 * 24 * 60 * 60  # 6 months
 DEFAULT_TIMEZONE: str = 'Europe/Helsinki'
 PURGE_CHANNEL_HOURS: int = 3  # posts older than this are purged in PURGE_CHANNELS
 
 IGNORE_LEVEL_USERS: list[int] = [
-    222717898647535617  # wasabi
+    222717898647535617,  # wasabi
+    194100387844718592  # hyper
 ]
 
 

@@ -345,31 +345,22 @@ class Plugin(Module):
         print(f'Last post id: {str(last_post_id)}')
         print('Fetching until last post found')
         count: int = 0
-        async for elem in self.bot.client.get_channel(CHANNELS.YLEINEN).history(limit=20000000):
-            self.last_day = elem.created_at
-            count += 1
-            if elem.id <= last_post_id:
-                break
-            if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]:  # anttubot, etyty
-                continue
+        for CHANNEL in LEVEL_CHANNELS:
+            async for elem in self.bot.client.get_channel(CHANNEL).history(limit=20000000):
+                if elem.id <= last_post_id:
+                    break
+                self.last_day = elem.created_at
+                count += 1
+                if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]: # anttubot, etyty
+                    continue
 
-            await self.new_message(elem, old=True)
-
-        async for elem in self.bot.client.get_channel(CHANNELS.YLEINEN2).history(limit=20000000):
-            self.last_day = elem.created_at
-            count += 1
-            if elem.id <= last_post_id:
-                break
-            if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]:  # anttubot, etyty
-                continue
-
-            await self.new_message(elem, old=True)
+                await self.new_message(elem, old=True)
 
         print('Found! Stopping...')
 
     async def on_message(self, message: discord.Message):
         if (message.author.bot and message.author.id not in [623974457404293130, 732616359367802891]) or \
-                message.channel.id not in [CHANNELS.YLEINEN, CHANNELS.YLEINEN2] or message.channel.guild.id != SERVER_ID:
+                message.channel.id not in LEVEL_CHANNELS or message.channel.guild.id != SERVER_ID:
             return
 
         if message.created_at.date() != self.last_day.date() and not self.bot.launching:
