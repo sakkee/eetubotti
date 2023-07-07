@@ -95,7 +95,7 @@ class SqliteDatabase:
                     query += f"{key} ({','.join(['?'] * len(where[key]))}) "
                 else:
                     query += f"{key} ? "
-                extra_values += extra_values + (where[key],) if not isinstance(where[key], list) and \
+                extra_values = extra_values + (where[key],) if not isinstance(where[key], list) and \
                                                                not isinstance(where[key], tuple) else tuple(where[key])
         query += f"{join_query}"
         if group_by:
@@ -103,6 +103,7 @@ class SqliteDatabase:
         if order_by:
             query += f"ORDER BY {', '.join(order_by) if isinstance(order_by, list) else order_by} "
         query += f"{'DESC' if desc else ''};"
+
         self.cursor.execute(query, extra_values)
         return self.cursor.fetchall() if fetchall else self.cursor.fetchone()
 
