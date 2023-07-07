@@ -205,7 +205,8 @@ class Plugin(Module):
         u_id: str = str(message.author.id) if message else str(interaction.user.id)
         if ch_id not in self.casino_times:
             self.casino_times[ch_id] = 0
-        if ts - self.casino_times[ch_id] <= 30 and int(u_id) != 623974457404293130:
+        if ts - self.casino_times[ch_id] <= 30:
+            self.reset_cooldown(user)
             if not self.warned:
                 self.warned = True
                 await self.bot.commands.error(Localizations.get('CASINO_ONGOING'), message, interaction)
