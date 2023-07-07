@@ -32,7 +32,8 @@ class Plugin(Module):
         number: str = str(random.randrange(100))
         number = "0" + number if len(number) == 1 else number
         if len(number) < 1 or number[0] != number[1]:
-            await self.bot.commands.error(Localizations.get('DOUBLE_NO_WIN').format(number), message, interaction)
+            await self.bot.commands.message(Localizations.get('DOUBLE_NO_WIN').format(number), message, interaction,
+                                            delete_after=8)
             return
         await self.bot.commands.message(Localizations.get('DOUBLE_WIN').format(number), message, interaction)
 
@@ -41,7 +42,8 @@ class Plugin(Module):
         number: str = str(random.randrange(1000000))
         number = "0" + number if len(number) == 1 else number
         if len(number) < 1 or number[-1] != number[-2]:
-            await self.bot.commands.error(Localizations.get('DOUBLE_NO_WIN').format(number), message, interaction)
+            await self.bot.commands.message(Localizations.get('DOUBLE_NO_WIN').format(number), message, interaction,
+                                            delete_after=8)
             return
         if len(number) >= 6 and number[-1] == number[-2] == number[-3] == number[-4] == number[-5] == number[-6]:
             await self.bot.commands.message(Localizations.get('GET_BIG_WIN').format(number), message, interaction)

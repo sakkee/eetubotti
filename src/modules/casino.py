@@ -148,7 +148,7 @@ class Plugin(Module):
         await self.bot.commands.message(
             Localizations.get('BALANCE_RESPONSE').format(target_user.name,
                                                          '{:,}'.format(self.get_user_balance(target_user))),
-            message, interaction)
+            message, interaction, delete_after=10)
 
     async def casino(self, user: User, message: discord.Message | None = None,
                      interaction: discord.Interaction | None = None,

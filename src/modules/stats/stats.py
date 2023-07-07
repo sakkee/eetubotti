@@ -119,10 +119,10 @@ class Plugin(Module):
                 image_binary.seek(0)
                 await self.bot.commands.message(
                     message=message, interaction=interaction,
-                    file=discord.File(fp=image_binary, filename='hengitat_nyt_manuaalisesti.png'))
+                    file=discord.File(fp=image_binary, filename='hengitat_nyt_manuaalisesti.png'), delete_after=15)
         except Exception as e:
             print(e)
-            await self.bot.commands.message(msg=Localizations.get('ON_ERROR'), message=message, interaction=interaction)
+            await self.bot.commands.error(msg=Localizations.get('ON_ERROR'), message=message, interaction=interaction)
 
     async def streak(self, user: User, message: discord.Message | None = None,
                      interaction: discord.Interaction | None = None,
@@ -133,7 +133,7 @@ class Plugin(Module):
             return
         streak: int = functions.get_user_streak(user, self.bot.daylist)
         await self.bot.commands.message(Localizations.get('STREAK_SCORE').format(target_user.name, streak),
-                                        message, interaction)
+                                        message, interaction, delete_after=10)
 
     async def top(self, user: User, message: discord.Message | None = None,
                   interaction: discord.Interaction | None = None, **kwargs):
@@ -151,7 +151,7 @@ class Plugin(Module):
                 break
             usr = self.bot.get_user_by_id(int(k[0]))
             sendable_message += Localizations.get('ACTIVITY_ROW').format(i, usr.name, usr.level)
-        await self.bot.commands.message(sendable_message, message, interaction)
+        await self.bot.commands.message(sendable_message, message, interaction, delete_after=25)
 
     async def activity(self, user: User, message: discord.Message | None = None,
                        interaction: discord.Interaction | None = None,
@@ -165,7 +165,7 @@ class Plugin(Module):
         msg = Localizations.get('ACTIVE_YES').format(target_user.name, user_points, next_threshold) if \
             user_points >= next_threshold else \
             Localizations.get('ACTIVE_NO').format(target_user.name, user_points, next_threshold)
-        await self.bot.commands.message(msg, message, interaction)
+        await self.bot.commands.message(msg, message, interaction, delete_after=12)
 
     async def activity_top(self, user: User, message: discord.Message | None = None,
                            interaction: discord.Interaction | None = None, **kwargs):
@@ -187,7 +187,7 @@ class Plugin(Module):
                 sendable_message += Localizations.get('ACTIVE_ROW_NO_TITLE')
             sendable_message += Localizations.get('GRIND_ROW').format(i, active[0].name, f'{active[1]:,}')
             i += 1
-        await self.bot.commands.message(sendable_message, message, interaction)
+        await self.bot.commands.message(sendable_message, message, interaction, delete_after=25)
 
     async def update_actives(self):
         active_role: discord.Role = self.bot.server.get_role(ROLES.ACTIVE)

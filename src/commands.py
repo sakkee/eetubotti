@@ -169,15 +169,18 @@ class Plugin(Module):
     @staticmethod
     async def message(msg: str = '', message: discord.Message = None, interaction: discord.Interaction = None,
                       file: discord.File | discord.utils.MISSING | None = discord.utils.MISSING,
-                      channel_send: bool = False) -> discord.Message | \
+                      channel_send: bool = False, delete_after: int = 0) -> discord.Message | \
             discord.Interaction.response:
         file = discord.utils.MISSING if not file else file
+        delete_after = None if delete_after == 0 else delete_after
+        if message and delete_after:
+            await message.delete(delay=delete_after)
         if not channel_send:
-            return await message.reply(msg, file=file) if message else \
-                await interaction.response.send_message(msg, file=file)
+            return await message.reply(msg, file=file, delete_after=delete_after) if message else \
+                await interaction.response.send_message(msg, file=file, delete_after=delete_after)
         else:
-            return await message.channel.send(msg, file=file) if message else \
-                await interaction.channel.send(msg, file=file)
+            return await message.channel.send(msg, file=file, delete_after=delete_after) if message else \
+                await interaction.channel.send(msg, file=file, delete_after=delete_after)
 
     async def on_message(self, message: discord.Message):
         if message.author.bot and message.author.id not in [623974457404293130, 732616359367802891]:

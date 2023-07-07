@@ -39,8 +39,7 @@ class Plugin(Module):
                           target_user: User | None = None,
                           **kwargs):
         if not target_user:
-            await message.reply(Localizations.get('USER_NOT_FOUND'), delete_after=8.0) if message else \
-                await interaction.response.send_message(Localizations.get('USER_NOT_FOUND'), delete_after=8.0)
+            await self.bot.commands.error(Localizations.get('USER_NOT_FOUND'), message, interaction)
             return
         if target_user.irc is not None:
             user_name: str = target_user.irc.name
@@ -65,4 +64,7 @@ class Plugin(Module):
         embed = discord.Embed(title=Localizations.get('IRC_TITLE').format(target_user.name, user_name), url=link)
         embed.set_image(url=photo_link)
 
-        await message.reply(embed=embed) if message else await interaction.response.send_message(embed=embed)
+        await message.reply(embed=embed, delete_after=30) if message else \
+            await interaction.response.send_message(embed=embed, delete_after=30)
+        if message:
+            await message.delete(delay=30)

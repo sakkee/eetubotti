@@ -197,4 +197,4 @@ class Plugin(Module):
             constructing_string += Localizations.get('NEXT_BIRTHDAYS_ROW').format(birthday.day, birthday.month,
                                                                                   user.name)
             counter += 1
-        await self.bot.commands.message(constructing_string, message, interaction)
+        await self.bot.commands.message(constructing_string, message, interaction, delete_after=15)
