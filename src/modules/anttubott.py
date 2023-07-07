@@ -1,14 +1,16 @@
+"""
+Saves anttuboy's messages in a data folder so that anttubott can use them. Can be easily edited to store other
+user's messages and files; just edit ANTTU_IDS.
+
+The messages are stored on data/anttuboy.json and the files are stored on data/anttubott/
+"""
+
 from __future__ import annotations
 import discord
 import os
 import json
-from datetime import datetime, date
-from dateutil.tz import gettz
 from dataclasses import field, dataclass, asdict
-from src.localizations import Localizations
-from src.objects import User
-from src.constants import DEFAULT_TIMEZONE, SERVER_ID, ROLES, CHANNELS
-import src.functions as functions
+from src.constants import CHANNELS, LEVEL_CHANNELS
 from .module import Module
 
 ANTTU_IDS: list[int] = [424582449666719745, 295540519616905216, 660316187594457089]
@@ -38,7 +40,7 @@ class Msg:
 
 @dataclass
 class Plugin(Module):
-    enabled: bool = False
+    enabled: bool = True
     anttu_messages: list[Msg] = field(default_factory=list)
     increment: int = 0
 
@@ -75,6 +77,9 @@ class Plugin(Module):
     async def on_message(self, message: discord.Message):
         if not self.is_anttuboy(message.author.id):
             return
+        if message.channel.id not in LEVEL_CHANNELS:
+            return
+
         await self.save_message(message)
 
         self.increment += 1

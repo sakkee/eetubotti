@@ -1,5 +1,4 @@
 from __future__ import annotations
-import sqlite3
 from .database_model import database_model
 from src.objects import *
 import src.functions as functions
@@ -305,13 +304,14 @@ class Database:
                 self.db.update(table,
                                set_values={'name': elem.name, 'profile_filename': elem.profile_filename,
                                            'identifier': elem.identifier},
-                               where={'id': elem.id})
+                               where={'id=': elem.id})
 
         elif table == 'Reactions':
             if not elem.is_in_database:
                 self.db.insert(table, {'message_id': elem.message_id, 'emoji_id': elem.emoji_id, 'count': elem.count})
             else:
-                self.db.update(table, {'count': elem.count}, {'message_id': elem.message_id, 'emoji_id': elem.emoji_id})
+                self.db.update(table, {'count': elem.count},
+                               {'message_id=': elem.message_id, 'emoji_id=': elem.emoji_id})
             elem.is_in_database = True
 
         elif table == 'Messages':
@@ -345,7 +345,7 @@ class Database:
                     'total_post_length': elem.total_post_length, 'mentioned_times': elem.mentioned_times,
                     'files_sent': elem.files_sent, 'longest_streak': elem.longest_streak,
                     'last_post_time': elem.last_post_time
-                }, where={'user_id': elem.user_id})
+                }, where={'user_id=': elem.user_id})
                 elem.is_in_database = True
             elem.should_update = False
 

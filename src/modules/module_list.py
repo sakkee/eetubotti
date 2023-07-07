@@ -1,3 +1,7 @@
+"""
+All used modules must be imported here.
+"""
+
 from typing import Type
 from . import (
     module,
