@@ -129,7 +129,7 @@ class Plugin(Module):
         msg = Localizations.get('BIRTHDAY_TODAY').format(target_user.name) if not difference.days else \
             Localizations.get('BIRTHDAY_DELTA').format(target_user.name, target_birthday.day, target_birthday.month,
                                                        difference.days)
-        await self.bot.commands.message(msg, message, interaction)
+        await self.bot.commands.message(msg, message, interaction, delete_after=10)
 
     def get_birthday(self, user: User) -> Birthday | None:
         return self.birthdays.get(user.id, None)

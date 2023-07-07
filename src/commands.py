@@ -170,9 +170,10 @@ class Plugin(Module):
     async def message(msg: str = '', message: discord.Message = None, interaction: discord.Interaction = None,
                       file: discord.File | discord.utils.MISSING | None = discord.utils.MISSING,
                       channel_send: bool = False, delete_after: int = 0) -> discord.Message | \
-            discord.Interaction.response:
+                                                                            discord.Interaction.response:
         file = discord.utils.MISSING if not file else file
-        delete_after = None if delete_after == 0 else delete_after
+        delete_after = None if (delete_after == 0 or (message and message.channel.id == CHANNELS.BOTTIKOMENNOT)
+                                or (interaction and interaction.channel.id == CHANNELS.BOTTIKOMENNOT)) else delete_after
         if message and delete_after:
             await message.delete(delay=delete_after)
         if not channel_send:
