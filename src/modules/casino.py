@@ -485,6 +485,9 @@ class Plugin(Module):
         return points * Constants.POINTS_TO_BALANCE_MULTIPLIER
 
     def get_user_balance(self, user: User) -> int:
-        return self.balances[user.id].get('points') \
-            - self.balances[user.id].get('reduce_points') \
-            + self.user_points_to_balance(user.stats.points)
+        try:
+            return self.balances[user.id].get('points') \
+                - self.balances[user.id].get('reduce_points') \
+                + self.user_points_to_balance(user.stats.points)
+        except KeyError:
+            return 0
