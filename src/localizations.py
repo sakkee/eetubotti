@@ -90,5 +90,8 @@ Localizations: dict[str, str] = {
     "NO_LINKS_IN_GENERAL": "Ei linkkejä tai mediaa yleiseen {0}! Voi tulla kick. Mene <#{1}>",
     "BALANCE_DESCRIPTION": "Näyttää käyttäjän saldon",
     "BALANCE_RESPONSE": "**{0}**:n saldo on {1}",
-    "TOO_LOW_BALANCE": "Huutista sun saldo on liian pieni, et pysty pelaa :D"
+    "TOO_LOW_BALANCE": "Huutista sun saldo on liian pieni, et pysty pelaa :D",
+    "BALANCES_DESCRIPTION": "Top 10 saldoa",
+    "BALANCES_TITLE": "**TOP 10 saldoa:**\n",
+    "BALANCES_ROW": "> {0}. **{1}** {2} pistettä\n"
 }

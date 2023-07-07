@@ -137,6 +137,24 @@ class Plugin(Module):
                 target_user=käyttäjä
             )
 
+        @self.bot.commands.register(command_name='saldot', function=self.top_balances,
+                                    description=Localizations.get('BALANCES_DESCRIPTION'), commands_per_day=5,
+                                    timeout=30)
+        async def top_balances(interaction: discord.Interaction):
+            await self.bot.commands.commands['saldot'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+    async def top_balances(self, user: User, message: discord.Message | None = None,
+                           interaction: discord.Interaction | None = None, **kwargs):
+        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users]
+        sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: -tup[1])[:10]
+        msg: str = Localizations.get('BALANCES_TITLE')
+        for i in range(len(sorted_balance_list)):
+            msg += Localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0], sorted_balance_list[i][1])
+        await self.bot.commands.message(msg, message, interaction, delete_after=25)
+
     async def balance(self, user: User, message: discord.Message | None = None,
                       interaction: discord.Interaction | None = None, target_user: User | None = None):
         if not target_user:
@@ -316,14 +334,15 @@ class Plugin(Module):
 
         # reset cooldown
         self.casino_times[ch_id] = 0
-        if len(wins) == 0:
-            try:
-                if message:
-                    await message.delete()
-            except:
-                pass
-            finally:
-                await casino_post.delete()
+
+        try:
+            if message:
+                await message.delete()
+        except:
+            pass
+        finally:
+            await casino_post.delete()
+            if len(wins) == 0:
                 await msg.delete()
         i: int = 0
         for file in files[1:]:
