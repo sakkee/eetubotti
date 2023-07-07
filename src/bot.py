@@ -30,6 +30,7 @@ class Bot(Module):
         token (str): the discord token of the bot.
         launching (bool): whether the bot is still launching. Set False when on_ready is called.
         events (Discord_Events): Event Manager. The events are called from the Event Manager.
+        localizations (Localization): Localization Manager. The data is located in assets/localization.json.
         commands (CommandManager): The command manager that handles the core logic of application commands, including
             message commands and slash commands.
          users (list[User]): list of User objects. Includes Users that are no longer in the server.
@@ -59,19 +60,22 @@ class Bot(Module):
     client: discord.Client = None
     client_tree: discord.app_commands.CommandTree = None
     modules: list[Module] = field(default_factory=list)
-    users_in_voice: list = field(default_factory=list)
     server: discord.Guild = None
-    previous_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
+    current_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
     last_day: datetime = datetime.utcnow()
 
     def __post_init__(self):
+        """Initialize the bot. First create the data folder if not exists, then data/profile_images if not exists.
+
+        Create the database manager object and setup the database, get reactions, active days and users. Initialize
+        the discord client and refresh the events.
+        """
         if not os.path.exists(f'data'):
             os.mkdir(f'data')
 
         if not os.path.exists(f'data/profile_images'):
             os.mkdir(f'data/profile_images')
         self.refresh_modules()
-        self.modules[1].name = "ircci"
         self.database = Database(self)
         self.database.setup_database()
         self.reactions = self.database.get_reactions()
@@ -82,19 +86,27 @@ class Bot(Module):
         self.events = Discord_Events(self)
         self.events.link_events()
 
+    def start(self):
+        self.client.run(self.token)
+
     def refresh_modules(self):
         if not self.commands:
-            self.commands = CommandModule(self)
+            self.commands = CommandManager(self)
         self.modules[:] = [self.commands]
         for module in module_list:
             if not module.enabled:
                 continue
-            self.modules.append(module(self))
+            self.modules.append(module(bot=self))
+        self.localizations.load()
 
     async def reload_module(self, module_name: str, message: discord.Message, interaction: discord.Interaction,
                             **kwargs):
+        """Discord slash command used to reload a module when code or module file has been changed. This is used
+        to avoid the need for rebooting the bot. Initialized in src/discord_events.py.
+        """
         if len(module_name) < 2:
-            await self.commands.error(Localizations.get('MODULE_NOT_FOUND').format(module_name), message, interaction)
+            await self.commands.error(self.localizations.get('MODULE_NOT_FOUND').format(module_name),
+                                      message, interaction)
             return
 
         found_module = None
@@ -103,27 +115,31 @@ class Bot(Module):
                 found_module = _module
                 break
         if not found_module:
-            await self.commands.error(Localizations.get('MODULE_NOT_FOUND').format(module_name), message, interaction)
+            await self.commands.error(self.localizations.get('MODULE_NOT_FOUND').format(module_name),
+                                      message, interaction)
             return
         self.modules[:] = [x for x in self.modules if x != found_module]
         i = importlib.import_module(found_module.__class__.__module__)
         plugin = importlib.reload(i)
         self.modules.append(plugin.Plugin(self))
         await self.modules[-1].on_ready()
-        await self.commands.message(Localizations.get('MODULE_RELOADED').format(found_module.__class__.__module__),
+        await self.commands.message(self.localizations.get('MODULE_RELOADED').format(found_module.__class__.__module__),
                                     message, interaction)
-
-    def start(self):
-        self.client.run(self.token)
 
     async def sync_users(self):
         print('Syncing users...')
         async for member in self.server.fetch_members(limit=None):
             await self.add_if_user_not_exist(member)
         print('Users synced!')
-        #await self.client.get_channel(CHANNELS.YLEINEN).send(Localizations.get('ON_BOOT'))
+        await self.client.get_channel(CHANNELS.YLEINEN).send(self.localizations.get('ON_BOOT'))
 
-    async def add_if_user_not_exist(self, member: discord.Member | discord.User, message: bool = False):
+    async def add_if_user_not_exist(self, member: discord.Member | discord.User, is_message: bool = False):
+        """Add User if it doesn't already exist.
+
+        Args:
+            member (discord.Member | discord.User): a discord.py's Member or User to be added.
+            is_message (bool): whether called from reading a message.
+        """
         if not self.get_user_by_id(member.id):
             filepath = await self.get_user_file(member)
             user_is_in_guild: bool = True if self.server.get_member(member.id) else False
@@ -142,19 +158,27 @@ class Bot(Module):
             user = self.get_user_by_id(member.id)
             if isinstance(member, discord.Member):
                 user.set_roles(member.roles)
-            if not message:
+            if not is_message:
                 user.is_in_guild = True
             if user.name != member.name or user.identifier != member.discriminator:
                 user.name = member.name
                 user.identifier = member.discriminator
                 self.database.add_user(user)
-            if not message:
+            if not is_message:
                 filepath = await self.get_user_file(member)
                 if user.profile_filename != filepath:
                     user.profile_filename = filepath
                     self.database.add_user(user)
 
     def get_user_by_id(self, id: int) -> User | None:
+        """Get User by id.
+
+        Args:
+            id (int): the User id
+
+        Returns:
+            User or None.
+        """
         member: User | None = None
         for user in self.users:
             if user.id == id:
@@ -164,6 +188,14 @@ class Bot(Module):
 
     @staticmethod
     async def get_user_file(member: discord.Member) -> str:
+        """Download member profile image.
+
+        Args:
+            member (discord.Member): the member whose profile image to be downloaded.
+
+        Returns:
+            The file path of the downloaded profile image.
+        """
         avatar: discord.Asset = member.display_avatar.with_static_format('png').with_size(256)
         filename: str = str(avatar).split('?')[0].split('/')[-1]
         id: int = member.id
@@ -177,122 +209,36 @@ class Bot(Module):
         return filepath
 
     async def on_new_day(self, date_now: datetime):
-        self.previous_day = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
-        for module in self.modules:
-            try:
-                await module.on_new_day(date_now)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_new_day: {e}")
+        self.current_day = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
 
     async def on_message(self, message: discord.Message):
-        if self.launching:
-            return
+        # default timezone midnight
+        if datetime.now(tz=gettz(DEFAULT_TIMEZONE)).date() != self.current_day.date() and not self.launching:
+            await self.events.on_new_day(datetime.now(tz=gettz(DEFAULT_TIMEZONE)))
 
-        if datetime.now(tz=gettz(DEFAULT_TIMEZONE)).date() != self.previous_day.date() and not self.launching:
-            # default timezone midnight
-            await self.on_new_day(datetime.now(tz=gettz(DEFAULT_TIMEZONE)))
-
+        # UTC midnight
         if message.created_at.date() != self.last_day.date() and not self.launching:
-            # UTC midnight
             self.last_day = message.created_at
             self.database.new_utc_day()
-
-        for module in self.modules:
-            try:
-                await module.on_message(message)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_message: {e}")
 
     async def on_ready(self):
         self.launching = False
         self.server = self.client.get_guild(SERVER_ID)
         await self.sync_users()
-        for module in self.modules:
-            try:
-                await module.on_ready()
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_ready: {e}")
-
-        self.database.save_database()
-
-        @self.commands.register(command_name='reload_module', function=self.reload_module,
-                                description='Reload module', commands_per_day=200, timeout=5)
-        async def reload_module(interaction: discord.Interaction, module_name: str = ""):
-            await self.commands.commands['reload_module'].execute(
-                user=self.get_user_by_id(interaction.user.id),
-                interaction=interaction,
-                module_name=module_name
-            )
-
-        self.client_tree.copy_global_to(guild=self.server)
-        await self.client_tree.sync(guild=self.server)
 
     async def on_member_join(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
-        if user is None:
-            filepath: str = await self.get_user_file(member)
-            user = User(id=member.id, name=member.name, bot=int(member.bot), profile_filename=filepath,
-                        identifier=member.discriminator, stats=Stats(member.id), is_in_guild=True)
-            self.users.append(user)
-            self.database.add_user(user)
-
-        for module in self.modules:
-            try:
-                await module.on_member_join(member)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_member_join: {e}")
+        if user is not None:
+            return
+        filepath: str = await self.get_user_file(member)
+        user = User(id=member.id, name=member.name, bot=int(member.bot), profile_filename=filepath,
+                    identifier=member.discriminator, stats=Stats(member.id), is_in_guild=True)
+        self.users.append(user)
+        self.database.add_user(user)
 
     async def on_member_remove(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
-        if user is not None:
-            user.set_roles(None)
-            user.is_in_guild = False
-
-        for module in self.modules:
-            try:
-                await module.on_member_remove(member)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_member_remove: {e}")
-
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        for module in self.modules:
-            try:
-                await module.on_raw_reaction_add(payload)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_raw_reaction_add: {e}")
-
-    async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        for module in self.modules:
-            try:
-                await module.on_message_edit(before, after)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_message_edit: {e}")
-
-    async def on_member_unban(self, guild: discord.Guild, user: discord.User):
-        for module in self.modules:
-            try:
-                await module.on_member_unban(guild, user)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_member_unban: {e}")
-
-    async def on_member_ban(self, guild: discord.Guild, user: discord.User):
-        for module in self.modules:
-            try:
-                await module.on_member_ban(guild, user)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_member_ban: {e}")
-
-    async def on_member_update(self, before: discord.Member, after: discord.Member):
-        for module in self.modules:
-            try:
-                await module.on_member_update(before, after)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_member_update: {e}")
-
-    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
-                                    after: discord.VoiceState):
-        for module in self.modules:
-            try:
-                await module.on_voice_state_update(member, before, after)
-            except Exception as e:
-                print(f"Module {module.__class__.__module__} failed on_voice_state_update: {e}")
+        if user is None:
+            return
+        user.set_roles(None)
+        user.is_in_guild = False
