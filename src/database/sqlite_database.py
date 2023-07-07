@@ -37,24 +37,25 @@ class SqliteDatabase:
     def create_table(self, table_name: str, columns: list[Column]):
         """Create table.
 
-        TODO: Allow update table if exists
+        TODO: Allow update table if exists. At the moment you need to manually update a column in an existing database
 
         Args:
             table_name (str): name of the table.
             columns (list[Column]): list of Column objects that are to be inserted.
         """
-
         columns_and_types: str = ""
         for i in range(len(columns)):
             if i > 0:
                 columns_and_types += ', '
             columns_and_types += columns[i].name + " " + columns[i].type
         self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_and_types});")
+        self.cursor.execute(f"PRAGMA table_info({table_name})")
+        a = self.cursor.fetchall()
         self.save()
 
     def select(self, table_name: str, values: list[str] | str, where: dict[str, Any] | None = None,
                group_by: str | list[str] = None, order_by: str | list[str] = None,
-               join_query: str = "", fetchall: bool = True, desc: bool = False) -> list:
+               join_query: str = "", fetchall: bool = True, desc: bool = False, limit: int = None) -> list:
         """Select query.
 
         Args:
@@ -65,7 +66,8 @@ class SqliteDatabase:
             order_by (str | list[str]): ORDER BY param. usage: order_by='year', or order_by=['year', 'month', 'day']
             join_query (str): SQL join query.
             fetchall (bool): if True, then fetchall() used, else fetchone() used.
-            desc (bool): if True, add 'DESC' in the end of the query.
+            desc (bool): if True, add 'DESC' in the end of the query (descending order)
+            limit (int): How many rows are selected. if 0 or None, the parameter won't be used
 
         Returns:
             Rows or row from the resultset.
@@ -78,32 +80,16 @@ class SqliteDatabase:
                 'User.id=ActivityDates.user_id')
             select('ActivityDates', ['year', 'month', 'day'], group_by=['year', 'month', 'day'],
                 order_by=['year', 'month', 'day'])
-
         """
         query: str = f"SELECT {', '.join(values) if isinstance(values, list) else values} FROM {table_name} "
-        extra_values: tuple = tuple()
-        if where:
-            query += 'WHERE '
-            i: int = 0
-            for key in where:
-                if i > 0:
-                    query += 'AND '
-                i += 1
-                if key.split(' ')[-1] == 'IN':
-                    if not isinstance(where[key], list) and not isinstance(where[key], tuple):
-                        where[key] = [where[key]]
-                    query += f"{key} ({','.join(['?'] * len(where[key]))}) "
-                else:
-                    query += f"{key} ? "
-                extra_values = extra_values + (where[key],) if not isinstance(where[key], list) and \
-                                                               not isinstance(where[key], tuple) else tuple(where[key])
-        query += f"{join_query}"
+        where_query, extra_values = self.construct_where_query(where)
+        query += f"{where_query}{join_query}"
         if group_by:
             query += f"GROUP BY {', '.join(group_by) if isinstance(group_by, list) else group_by} "
         if order_by:
             query += f"ORDER BY {', '.join(order_by) if isinstance(order_by, list) else order_by} "
-        query += f"{'DESC' if desc else ''};"
-
+        query += f"{'DESC ' if desc else ''};"
+        query += f"{'LIMIT ' + str(limit) if limit else ''}"
         self.cursor.execute(query, extra_values)
         return self.cursor.fetchall() if fetchall else self.cursor.fetchone()
 
@@ -123,7 +109,7 @@ class SqliteDatabase:
             insert('User', {'id': 100, 'name': 'Test Guy', 'bot': 0, 'profile_filename': 'ad.jpg', 'identifier': 0})
         """
         try:
-            self.cursor.execute(f"INSERT INTO {table_name} ({', '.join(values.keys())}) " +
+            self.cursor.execute(f"INSERT or IGNORE INTO {table_name} ({', '.join(values.keys())}) " +
                                 f"VALUES ({','.join(['?'] * len(values))})", tuple(values.values()))
             return True
         except sqlite3.IntegrityError as e:
@@ -149,12 +135,30 @@ class SqliteDatabase:
             query += f"{key}=?" if i == 0 else f", {key}=?"
             values += set_values[key],
             i += 1
-        if where:
-            query += " WHERE "
-            i = 0
-            for key in where:
-                query += f"{key}=? " if i == 0 else f" AND {key}=? "
-                values += where[key],
-                i += 1
+        where_query, extra_values = self.construct_where_query(where)
+        query += where_query
+        values += extra_values
 
         self.cursor.execute(query, values)
+
+    @staticmethod
+    def construct_where_query(where: dict[str, Any]) -> tuple[str, tuple[Any]]:
+        query: str = ''
+        extra_values: tuple = tuple()
+        if not where:
+            return query, extra_values
+        query += ' WHERE '
+        i: int = 0
+        for key in where:
+            if i > 0:
+                query += 'AND '
+            i += 1
+            if key.split(' ')[-1] == 'IN':
+                if not isinstance(where[key], list) and not isinstance(where[key], tuple):
+                    where[key] = [where[key]]
+                query += f"{key} ({','.join(['?'] * len(where[key]))}) "
+            else:
+                query += f"{key}? "
+            extra_values = extra_values + (where[key],) if not isinstance(where[key], list) and \
+                                                           not isinstance(where[key], tuple) else tuple(where[key])
+        return query, extra_values

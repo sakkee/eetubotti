@@ -6,18 +6,52 @@ from src.discord_events import Discord_Events
 from src.objects import *
 from src.modules.module import Module
 from src.modules.module_list import module_list
-from src.localizations import Localizations
+from src.localizations import Localization
 from src.constants import *
 from src.database.database import Database
-from src.commands import Plugin as CommandModule
+from src.commands import CommandManager
 
 
 @dataclass
-class Bot:
-    token: str
+class Bot(Module):
+    """The main Bot class that acts as the core.
+
+    This class should handle all the core logic, e.g. including keeping track of time and keeping track of users,
+    connection to the Discord servers et cetera.
+
+    Specific code should be only in child modules that are found in src/modules/ without changing the core.
+    In case of changing only a child module, you can reload the module by using "reload_module" application command
+    on Discord, so no need to restart the bot.
+
+    Args:
+        token (str): the token of the bot.
+
+    Attributes:
+        token (str): the discord token of the bot.
+        launching (bool): whether the bot is still launching. Set False when on_ready is called.
+        events (Discord_Events): Event Manager. The events are called from the Event Manager.
+        commands (CommandManager): The command manager that handles the core logic of application commands, including
+            message commands and slash commands.
+         users (list[User]): list of User objects. Includes Users that are no longer in the server.
+         daylist (list[dict[str, int]]: the daylist when the server has been active. Used by the stats module.
+            This should be removed from this module and moved to the Stats module, but CBA.
+        reactions (list[Reaction]): list of all Reactions. NOT USED.
+        database (Database): the database handler. All communication with the database must be through this module.
+        client (discord.Client): the discord.py's Client module. Read:
+            https://discordpy.readthedocs.io/en/stable/api.html#client
+        client_tree (discord.app_commands.CommandTree): All slash commands are added to the Command Tree.
+            The CommandManager handles this.
+        modules (list[Module]): list of all modules in src/module_list.py that are enabled
+        server (discord.Guild): the server the bot is used on. Read:
+            https://discordpy.readthedocs.io/en/stable/api.html#discord.Guild
+        current_day (datetime): The current day's datetime. Used to track when the LOCAL day has changed.
+        last_day (datetime): UTC datetime. Used to track when the UTC day has changed.
+    """
+    token: str = ''
     launching: bool = True
     events: Discord_Events = None
-    commands: CommandModule = None
+    localizations: Localization = field(default_factory=lambda: Localization('assets/localization.json'))
+    commands: CommandManager = None
     users: list[User] = None
     daylist: list[dict[str, int]] = None
     reactions: list[Reaction] = None

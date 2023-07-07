@@ -1,12 +1,15 @@
-from dataclasses import dataclass
+"""
+IRC-Galleria module. Every day each user gets a random IRC-galleria user they are supposed to be that day.
+
+Commands:
+    !irc
+"""
+
 from datetime import datetime
 import discord
 import requests
-import re
 from pyquery import PyQuery
-from src.localizations import Localizations
 from src.objects import User, Irc
-from src.constants import SERVER_ID
 from .module import Module
 
 base_link: str = 'https://irc-galleria.net/user/'
@@ -20,7 +23,7 @@ class Plugin(Module):
 
     async def on_ready(self):
         @self.bot.commands.register(command_name='irc', function=self.ircgalleria,
-                                    description=Localizations.get('IRC_DESCRIPTION'), commands_per_day=5)
+                                    description=self.bot.localizations.get('IRC_DESCRIPTION'), commands_per_day=5)
         @discord.app_commands.checks.has_permissions(
             embed_links=True
         )
@@ -39,7 +42,7 @@ class Plugin(Module):
                           target_user: User | None = None,
                           **kwargs):
         if not target_user:
-            await self.bot.commands.error(Localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
             return
         if target_user.irc is not None:
             user_name: str = target_user.irc.name
@@ -61,7 +64,8 @@ class Plugin(Module):
                 target_user.irc = Irc(user_name, link, photo_link)
                 break
 
-        embed = discord.Embed(title=Localizations.get('IRC_TITLE').format(target_user.name, user_name), url=link)
+        embed = discord.Embed(title=self.bot.localizations.get('IRC_TITLE').format(target_user.name, user_name),
+                              url=link)
         embed.set_image(url=photo_link)
 
         await message.reply(embed=embed, delete_after=30) if message else \

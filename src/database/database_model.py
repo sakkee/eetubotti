@@ -1,4 +1,5 @@
-"""The database model used by Database class.
+"""
+The database model used by Database class.
 
 Usage in Database.setup_database.
 """

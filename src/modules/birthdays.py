@@ -1,12 +1,19 @@
+"""
+This module keeps track of the birthdays. The birthdays are stored in data/birthdays.json.
+
+Commands:
+    !synttärit
+    !synttärisankarit
+"""
+
 from __future__ import annotations
 import discord
 import json
 from datetime import datetime, date
 from dateutil.tz import gettz
 from dataclasses import field, dataclass, asdict
-from src.localizations import Localizations
 from src.objects import User
-from src.constants import DEFAULT_TIMEZONE, SERVER_ID, ROLES, CHANNELS
+from src.constants import DEFAULT_TIMEZONE, ROLES, CHANNELS
 import src.functions as functions
 from .module import Module
 
@@ -56,7 +63,7 @@ class Plugin(Module):
         self.load_birthdays()
 
         @self.bot.commands.register(command_name='synttärit', function=self.birthday,
-                                    description=Localizations.get('BIRTHDAY_DESCRIPTION'), commands_per_day=10,
+                                    description=self.bot.localizations.get('BIRTHDAY_DESCRIPTION'), commands_per_day=10,
                                     timeout=10)
         async def birthday(interaction: discord.Interaction, käyttäjä: discord.User = None, päivä: int = 0,
                            kuukausi: int = 0, vuosi: int = 0):
@@ -68,8 +75,8 @@ class Plugin(Module):
             )
 
         @self.bot.commands.register(command_name='synttärisankarit', function=self.next_birthdays,
-                                    description=Localizations.get('NEXT_BIRTHDAYS_DESCRIPTION'), commands_per_day=10,
-                                    timeout=10)
+                                    description=self.bot.localizations.get('NEXT_BIRTHDAYS_DESCRIPTION'),
+                                    commands_per_day=10, timeout=10)
         async def next_birthdays(interaction: discord.Interaction):
             await self.bot.commands.commands['synttärisankarit'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
@@ -83,7 +90,7 @@ class Plugin(Module):
                        target_user: User | None = None,
                        birthday: str | None = ''):
         if not target_user:
-            await self.bot.commands.error(Localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
             return
         date_now: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
         if target_user == user and birthday and birthday != '0.0.0':
@@ -92,7 +99,7 @@ class Plugin(Module):
                 ok_day = functions.utc_to_local(datetime.fromtimestamp(self.birthdays[user.id].timestamp))
                 ok_delta = date_now - ok_day
                 days_until = BIRTHDAY_UPDATE_INTERVAL / 60 / 60 / 24 - ok_delta.days
-                msg = Localizations.get('BIRTHDAY_WAIT').format(int(days_until))
+                msg = self.bot.localizations.get('BIRTHDAY_WAIT').format(int(days_until))
                 await self.bot.commands.error(msg, message, interaction)
                 return
 
@@ -100,24 +107,24 @@ class Plugin(Module):
                 birthday_date = functions.utc_to_local(datetime.strptime(birthday.split()[0], '%d.%m.%Y'))
                 delta = date_now - birthday_date
                 if delta.days < 13 * 365:
-                    await self.bot.commands.error(Localizations.get('BIRTHDAY_UNDERAGE'), message, interaction)
+                    await self.bot.commands.error(self.bot.localizations.get('BIRTHDAY_UNDERAGE'), message, interaction)
                     return
                 elif delta.days > 90 * 365:
-                    await self.bot.commands.error(Localizations.get('BIRTHDAY_TOO_OLD'), message, interaction)
+                    await self.bot.commands.error(self.bot.localizations.get('BIRTHDAY_TOO_OLD'), message, interaction)
                     return
                 birthday_obj = Birthday(birthday_date.year, birthday_date.month, birthday_date.day,
                                         int(date_now.timestamp()))
                 self.birthdays[user.id] = birthday_obj
-                msg = Localizations.get('BIRTHDAY_SET').format(birthday_obj.day, birthday_obj.month)
+                msg = self.bot.localizations.get('BIRTHDAY_SET').format(birthday_obj.day, birthday_obj.month)
                 self.save_birthdays()
                 await self.bot.commands.message(msg, message, interaction)
                 return
             except Exception as e:
                 print(e)
-                await self.bot.commands.error(Localizations.get('BIRTHDAY_ERROR'), message, interaction)
+                await self.bot.commands.error(self.bot.localizations.get('BIRTHDAY_ERROR'), message, interaction)
                 return
         if target_user.id not in self.birthdays:
-            msg = Localizations.get('BIRTHDAY_NOT_YET_SET').format(target_user.name)
+            msg = self.bot.localizations.get('BIRTHDAY_NOT_YET_SET').format(target_user.name)
             await self.bot.commands.error(msg, message, interaction)
             return
 
@@ -126,9 +133,9 @@ class Plugin(Module):
         if target_birthday < date_now.date():
             target_birthday = date(date_now.year + 1, month=usr_birthday.month, day=usr_birthday.day)
         difference = target_birthday - date_now.date()
-        msg = Localizations.get('BIRTHDAY_TODAY').format(target_user.name) if not difference.days else \
-            Localizations.get('BIRTHDAY_DELTA').format(target_user.name, target_birthday.day, target_birthday.month,
-                                                       difference.days)
+        msg = self.bot.localizations.get('BIRTHDAY_TODAY').format(target_user.name) if not difference.days else \
+            self.bot.localizations.get('BIRTHDAY_DELTA').format(target_user.name, target_birthday.day,
+                                                                target_birthday.month, difference.days)
         await self.bot.commands.message(msg, message, interaction, delete_after=10)
 
     def get_birthday(self, user: User) -> Birthday | None:
@@ -157,12 +164,12 @@ class Plugin(Module):
 
                 if member.id == 212594150124552192:
                     await self.bot.client.get_channel(CHANNELS.YLEINEN).send(
-                        Localizations.get('BIRTHDAY_ANNOUNCE_JUSU').format(member.mention),
+                        self.bot.localizations.get('BIRTHDAY_ANNOUNCE_JUSU').format(member.mention),
                         file=discord.File(open('assets/birthdays/gondola_birthday.mp4', 'rb'),
                                           filename='synttarit.mp4'))
                 else:
                     await self.bot.client.get_channel(CHANNELS.YLEINEN).send(
-                        Localizations.get('BIRTHDAY_ANNOUNCE').format(member.mention),
+                        self.bot.localizations.get('BIRTHDAY_ANNOUNCE').format(member.mention),
                         file=discord.File(open('assets/birthdays/gondola_birthday.mp4', 'rb'),
                                           filename="synttarit.mp4"))
 
@@ -186,7 +193,7 @@ class Plugin(Module):
                 break
             next_birthdays.append(birthday[0])
         counter: int = 1
-        constructing_string = Localizations.get('NEXT_BIRTHDAYS_TITLE')
+        constructing_string = self.bot.localizations.get('NEXT_BIRTHDAYS_TITLE')
         for user_id in next_birthdays:
             if counter > 10:
                 break
@@ -194,7 +201,7 @@ class Plugin(Module):
             if not user or not user.is_in_guild:
                 continue
             birthday: Birthday = self.birthdays[user_id]
-            constructing_string += Localizations.get('NEXT_BIRTHDAYS_ROW').format(birthday.day, birthday.month,
-                                                                                  user.name)
+            constructing_string += self.bot.localizations.get('NEXT_BIRTHDAYS_ROW').format(birthday.day, birthday.month,
+                                                                                           user.name)
             counter += 1
         await self.bot.commands.message(constructing_string, message, interaction, delete_after=15)

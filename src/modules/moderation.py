@@ -1,4 +1,11 @@
-import asyncio
+"""
+The moderation plugin. Handles bans, mutes and timeouts.
+
+Commands:
+    ?ban
+    🔴 as a reaction to a message (3 hour ban)
+"""
+
 import discord
 import json
 from dataclasses import field, dataclass
@@ -6,7 +13,6 @@ from datetime import datetime, timedelta
 from dateutil.tz import gettz
 from src.constants import *
 import src.functions as functions
-from src.localizations import Localizations
 from src.objects import User
 import time
 from .module import Module
@@ -36,7 +42,8 @@ class Plugin(Module):
         await self.fetch_bans()
 
         @self.bot.commands.register(command_name='ban', function=self.ban_user,
-                                    description=Localizations.get('BAN_DESCRIPTION'), commands_per_day=10, timeout=5)
+                                    description=self.bot.localizations.get('BAN_DESCRIPTION'),
+                                    commands_per_day=10, timeout=5)
         async def ban(interaction: discord.Interaction, käyttäjä: discord.User, syy: str = '',
                       tunnit: int = DEFAULT_BAN_LENGTH):
             await self.bot.commands.commands['ban'].execute(
@@ -52,17 +59,17 @@ class Plugin(Module):
                        target_user: User | None = None, reason: str = '', hours: int = DEFAULT_BAN_LENGTH,
                        **kwargs):
         if not functions.check_if_can_ban(message.author if message else interaction.user):
-            await self.bot.commands.error(Localizations.get('BAN_NO_PERMISSION'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('BAN_NO_PERMISSION'), message, interaction)
             return
         if target_user.is_ban_protected():
-            await self.bot.commands.error(Localizations.get('BAN_CANT_BAN').format(target_user.name),
+            await self.bot.commands.error(self.bot.localizations.get('BAN_CANT_BAN').format(target_user.name),
                                           message, interaction)
             return
         if user == target_user:
-            await self.bot.commands.error(Localizations.get('BAN_DESCRIPTION'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('BAN_DESCRIPTION'), message, interaction)
             return
         if not target_user.is_in_guild:
-            await self.bot.commands.error(Localizations.get('BAN_NOT_IN_GUILD').format(target_user.name),
+            await self.bot.commands.error(self.bot.localizations.get('BAN_NOT_IN_GUILD').format(target_user.name),
                                           message, interaction)
             return
 
@@ -72,22 +79,22 @@ class Plugin(Module):
             if content_list[-1].isnumeric():
                 hours = int(content_list[-1])
         hours = max(1, min(18, hours))
-        reason = Localizations.get('BAN_DEFAULT_REASON') if not reason else reason
+        reason = self.bot.localizations.get('BAN_DEFAULT_REASON') if not reason else reason
         member: discord.Member = await self.bot.server.fetch_member(target_user.id)
 
         if not member:
-            await self.bot.commands.error(Localizations.get('BAN_NOT_IN_GUILD').format(member.name),
+            await self.bot.commands.error(self.bot.localizations.get('BAN_NOT_IN_GUILD').format(member.name),
                                           message, interaction)
             return
         try:
-            await member.send(Localizations.get("BAN_DM").format(hours, reason))
+            await member.send(self.bot.localizations.get("BAN_DM").format(hours, reason))
         except:
             pass
 
         try:
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
-            await self.bot.commands.message(Localizations.get('BAN_CHANNEL_ANNOUNCE').format(member.name, hours,
-                                                                                             reason, user.name),
+            await self.bot.commands.message(self.bot.localizations.get('BAN_CHANNEL_ANNOUNCE')
+                                            .format(member.name, hours, reason, user.name),
                                             message, interaction, channel_send=True)
             if interaction:
                 await interaction.response.send_message('meni bänneille')
@@ -98,7 +105,7 @@ class Plugin(Module):
             self.save_bans()
 
         except:
-            await self.bot.commands.error(Localizations.get('ON_ERROR'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('ON_ERROR'), message, interaction)
 
     def save_bans(self):
         with open('data/bans.json', 'w') as f:
@@ -137,10 +144,10 @@ class Plugin(Module):
                 del self.ban_list[user]
                 await self.bot.server.unban(user)
                 await self.bot.server.get_channel(CHANNELS.YLEINEN).send(
-                    Localizations.get('UNBANNED_MEMBER').format(user.name))
+                    self.bot.localizations.get('UNBANNED_MEMBER').format(user.name))
             except Exception as e:
                 print("couldnt unban", e)
-                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('ON_ERROR'))
+                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('ON_ERROR'))
         if to_unban:
             self.save_bans()
         await self.check_mutes()
@@ -157,12 +164,11 @@ class Plugin(Module):
                 del self.mute_list[user]
                 member: discord.Member = self.bot.server.get_member(user.id)
                 await member.remove_roles(mute_role)
-                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('MEMBER_UNMUTED').format(
-                    member.name
-                ))
+                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('MEMBER_UNMUTED')
+                                                                         .format(member.name))
             except Exception as e:
                 print("couldn't unmute", e)
-                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('ON_ERROR'))
+                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('ON_ERROR'))
 
         to_untimeout: list[discord.User] = []
         for user in self.timeout_list:
@@ -176,7 +182,7 @@ class Plugin(Module):
                 await member.edit(timed_out_until=None)
             except Exception as e:
                 print("couldn't untimeout", e)
-                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('ON_ERROR'))
+                await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('ON_ERROR'))
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.emoji.name != '🔴' or not functions.check_if_can_ban(payload.member):
@@ -186,16 +192,15 @@ class Plugin(Module):
         message_content: str = message.content[:256] if message.content else ""
         member: discord.Member = message.author
         if member.bot or self.bot.get_user_by_id(member.id).is_ban_protected():
-            await self.bot.commands.error(Localizations.get('BAN_CANT_BAN').format(member.name),
+            await self.bot.commands.error(self.bot.localizations.get('BAN_CANT_BAN').format(member.name),
                                           message, None)
             return
         hours: int = DEFAULT_EMOJI_BAN_LENGTH
-        reason: str = Localizations.get(message_content)
+        reason: str = self.bot.localizations.get(message_content)
         try:
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
-            await self.bot.commands.message(Localizations.get('BAN_CHANNEL_ANNOUNCE').format(member.name, hours,
-                                                                                             reason,
-                                                                                             payload.member.name),
+            await self.bot.commands.message(self.bot.localizations.get('BAN_CHANNEL_ANNOUNCE')
+                                            .format(member.name, hours, reason, payload.member.name),
                                             message, None, channel_send=True)
             banned_user: discord.User = await self.bot.client.fetch_user(member.id)
             if banned_user in self.ban_list:
@@ -204,7 +209,7 @@ class Plugin(Module):
             self.save_bans()
 
         except:
-            await self.bot.commands.error(Localizations.get('ON_ERROR'), message, None)
+            await self.bot.commands.error(self.bot.localizations.get('ON_ERROR'), message, None)
 
     async def on_message(self, message: discord.Message):
         await self.check_unbans()
@@ -213,11 +218,12 @@ class Plugin(Module):
         if message.author.id == 270904126974590976:
             await message.delete()
             await message.channel.send(f"<#{CHANNELS.BOTTIKOMENNOT}>", delete_after=3.0)
-        if "http" in message.content and not message.author.bot and self.bot.get_user_by_id(message.author.id).level < 5 and \
+        if "http" in message.content and not message.author.bot and self.bot.get_user_by_id(
+                message.author.id).level < 5 and \
                 not self.bot.get_user_by_id(message.author.id).is_ban_protected():
             await message.delete()
-            a = await message.channel.send(Localizations.get('NO_LINKS_IN_GENERAL').format(message.author.mention,
-                                                                                           CHANNELS.MEDIA),
+            a = await message.channel.send(self.bot.localizations.get('NO_LINKS_IN_GENERAL')
+                                           .format(message.author.mention, CHANNELS.MEDIA),
                                            delete_after=8.0)
             return
         if len(message.content.split("\n")) <= 30:
@@ -233,7 +239,7 @@ class Plugin(Module):
         if self.bot.get_user_by_id(message.author.id).is_ban_protected():
             return
         await message.delete()
-        await message.channel.send(Localizations.get('TOO_LONG_MSG'), delete_after=8.0)
+        await message.channel.send(self.bot.localizations.get('TOO_LONG_MSG'), delete_after=8.0)
 
     async def on_member_unban(self, guild: discord.Guild, user: discord.User):
         if user in self.ban_list:
@@ -244,7 +250,8 @@ class Plugin(Module):
         hours: int = DEFAULT_BAN_LENGTH * 60 * 60
         if user in self.ban_list:
             try:
-                await user.send(Localizations.get('BAN_DM').format(hours, Localizations.get('BAN_DEFAULT_REASON')))
+                await user.send(self.bot.localizations.get('BAN_DM')
+                                .format(hours, self.bot.localizations.get('BAN_DEFAULT_REASON')))
             except:
                 pass
             return
@@ -255,27 +262,26 @@ class Plugin(Module):
         member: discord.Member = self.bot.server.get_member(after.id)
         if ROLES.MUTED in [x.id for x in after.roles] and ROLES.MUTED not in [x.id for x in before.roles]:
             self.mute_list[member._user] = time.time() + DEFAULT_MUTE_LENGTH * 60 * 60
-            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('MEMBER_MUTED').format(
+            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('MEMBER_MUTED').format(
                 after.name, DEFAULT_MUTE_LENGTH
             ))
         if ROLES.MUTED in [x.id for x in before.roles] and ROLES.MUTED not in [x.id for x in after.roles] and \
                 after in self.mute_list:
             del self.mute_list[member._user]
-            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('MEMBER_UNMUTED').format(
-                after.name
-            ), delete_after=15.0)
+            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('MEMBER_UNMUTED')
+                                                                     .format(after.name
+                                                                             ), delete_after=15.0)
         if after.timed_out_until and not before.timed_out_until:
-            delta_seconds: float = min((after.timed_out_until - datetime.now(tz=gettz(DEFAULT_TIMEZONE))).total_seconds(),
-                                       DEFAULT_MUTE_LENGTH * 60 * 60)
+            delta_seconds: float = min(
+                (after.timed_out_until - datetime.now(tz=gettz(DEFAULT_TIMEZONE))).total_seconds(),
+                DEFAULT_MUTE_LENGTH * 60 * 60)
             if after.timed_out_until > datetime.now(tz=gettz(DEFAULT_TIMEZONE)) + timedelta(seconds=delta_seconds):
                 await after.edit(timed_out_until=datetime.now(tz=gettz(DEFAULT_TIMEZONE)) + \
                                                  timedelta(seconds=delta_seconds))
             self.timeout_list[member._user] = time.time() + delta_seconds
-            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('MEMBER_TIMEDOUT').format(
-                after.name, round(delta_seconds/60)
-            ))
+            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('MEMBER_TIMEDOUT')
+                                                                     .format(after.name, round(delta_seconds / 60)))
         if before.timed_out_until and not after.timed_out_until:
             del self.timeout_list[member._user]
-            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(Localizations.get('MEMBER_UNTIMEOUT').format(
-                after.name
-            ), delete_after=15.0)
+            await self.bot.server.get_channel(CHANNELS.YLEINEN).send(self.bot.localizations.get('MEMBER_UNTIMEOUT')
+                                                                     .format(after.name), delete_after=15.0)

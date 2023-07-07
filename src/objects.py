@@ -204,6 +204,10 @@ class Points:
     message_points: int
     voice_points: int
 
+    @property
+    def points(self) -> int:
+        return self.message_points + self.voice_points
+
 
 @dataclass
 class ActivityDate(Points):

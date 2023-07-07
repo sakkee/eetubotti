@@ -1,5 +1,14 @@
+"""
+Casino module, to keep track of user balances and the casinos. The casino assets are found in assets/casino/ and the
+postable images are in data/casino/.
+
+Commands:
+    !kasino
+    !saldo
+    !saldot
+"""
+
 from dataclasses import field, dataclass
-from src.localizations import Localizations
 from src.objects import User
 from src.constants import CHANNELS
 import src.functions as functions
@@ -118,7 +127,7 @@ class Plugin(Module):
         self.casino_hide = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
 
         @self.bot.commands.register(command_name='kasino', function=self.casino,
-                                    description=Localizations.get('CASINO_DESCRIPTION'), commands_per_day=10,
+                                    description=self.bot.localizations.get('CASINO_DESCRIPTION'), commands_per_day=10,
                                     timeout=600)
         async def kasino(interaction: discord.Interaction, summa: int = 100000):
             await self.bot.commands.commands['kasino'].execute(
@@ -128,7 +137,7 @@ class Plugin(Module):
             )
 
         @self.bot.commands.register(command_name='saldo', function=self.balance,
-                                    description=Localizations.get('BALANCE_DESCRIPTION'), commands_per_day=20,
+                                    description=self.bot.localizations.get('BALANCE_DESCRIPTION'), commands_per_day=20,
                                     timeout=10)
         async def balance(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['saldo'].execute(
@@ -138,7 +147,7 @@ class Plugin(Module):
             )
 
         @self.bot.commands.register(command_name='saldot', function=self.top_balances,
-                                    description=Localizations.get('BALANCES_DESCRIPTION'), commands_per_day=5,
+                                    description=self.bot.localizations.get('BALANCES_DESCRIPTION'), commands_per_day=5,
                                     timeout=30)
         async def top_balances(interaction: discord.Interaction):
             await self.bot.commands.commands['saldot'].execute(
@@ -150,23 +159,23 @@ class Plugin(Module):
                            interaction: discord.Interaction | None = None, **kwargs):
         balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users]
         sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: -tup[1])[:10]
-        msg: str = Localizations.get('BALANCES_TITLE')
+        msg: str = self.bot.localizations.get('BALANCES_TITLE')
         for i in range(len(sorted_balance_list)):
-            msg += Localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0],
-                                                            '{:,}'.format(sorted_balance_list[i][1]))
+            msg += self.bot.localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0],
+                                                                     '{:,}'.format(sorted_balance_list[i][1]))
         await self.bot.commands.message(msg, message, interaction, delete_after=25)
 
     async def balance(self, user: User, message: discord.Message | None = None,
                       interaction: discord.Interaction | None = None, target_user: User | None = None):
         if not target_user:
-            await self.bot.commands.error(Localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
             return
         if target_user.id not in self.balances:
             self.balances[target_user.id] = {'points': self.user_points_to_balance(target_user.stats.points),
                                              'reduce_points': self.user_points_to_balance(target_user.stats.points)}
         await self.bot.commands.message(
-            Localizations.get('BALANCE_RESPONSE').format(target_user.name,
-                                                         '{:,}'.format(self.get_user_balance(target_user))),
+            self.bot.localizations.get('BALANCE_RESPONSE').format(target_user.name,
+                                                                  '{:,}'.format(self.get_user_balance(target_user))),
             message, interaction, delete_after=10)
 
     async def casino(self, user: User, message: discord.Message | None = None,
@@ -176,14 +185,14 @@ class Plugin(Module):
         # parse betting sum
         play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
         if play_amount < Constants.MIN_AMOUNT:
-            await self.bot.commands.error(Localizations.get('TOO_LOW_BALANCE'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.get('TOO_LOW_BALANCE'), message, interaction)
             return
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
                 # no sum given
                 self.reset_cooldown(user)
-                await self.bot.commands.error(Localizations.get('CASINO_GUIDE'), message)
+                await self.bot.commands.error(self.bot.localizations.get('CASINO_GUIDE'), message)
                 return
             if contents[1] != 'max':
                 try:
@@ -191,12 +200,13 @@ class Plugin(Module):
                     if play_amount > Constants.MAX_AMOUNT or play_amount < Constants.MIN_AMOUNT:
                         self.reset_cooldown(user)
                         await self.bot.commands.error(
-                            Localizations.get('CASINO_WRONG_SUM').format(Constants.MIN_AMOUNT, Constants.MAX_AMOUNT),
+                            self.bot.localizations.get('CASINO_WRONG_SUM')
+                            .format(Constants.MIN_AMOUNT, Constants.MAX_AMOUNT),
                             message)
                         return
                 except ValueError:
                     self.reset_cooldown(user)
-                    await self.bot.commands.error(Localizations.get('CASINO_GUIDE'), message)
+                    await self.bot.commands.error(self.bot.localizations.get('CASINO_GUIDE'), message)
                     return
 
         # manage casino cooldown to prevent multiple casinos the same time on the same channel
@@ -209,7 +219,7 @@ class Plugin(Module):
             self.reset_cooldown(user)
             if not self.warned:
                 self.warned = True
-                await self.bot.commands.error(Localizations.get('CASINO_ONGOING'), message, interaction)
+                await self.bot.commands.error(self.bot.localizations.get('CASINO_ONGOING'), message, interaction)
             elif message:
                 await message.delete()
             return
@@ -268,7 +278,7 @@ class Plugin(Module):
 
         # respond to interaction
         if interaction:
-            await interaction.response.send_message(Localizations.get("CASINO_LAUNCH").format(user.name),
+            await interaction.response.send_message(self.bot.localizations.get("CASINO_LAUNCH").format(user.name),
                                                     delete_after=5.0)
 
         # build the image urls
@@ -279,16 +289,18 @@ class Plugin(Module):
             # unpulled image hasn't been posted...
             post: discord.Message = await self.casino_hide.send(file=discord.File(files[0]))
             self.unpulled_casino_url = post.attachments[0].url
-            embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION')
-                                  .format(play_amount, self.get_user_balance(user) + play_amount))
+            embed = discord.Embed(title=self.bot.localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                  description=self.bot.localizations.get('CASINO_EMBED_DESCRIPTION')
+                                  .format(play_amount, self.get_user_balance(user) + play_amount)
+                                  )
             embed.set_image(url=self.unpulled_casino_url)
             await self.casino_hide.send(embed=embed)
         urls.append(self.unpulled_casino_url)
         embed: discord.Embed = discord.Embed(
-            title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-            description=Localizations.get('CASINO_EMBED_DESCRIPTION').format(play_amount,
-                                                                             self.get_user_balance(user) + play_amount))
+            title=self.bot.localizations.get('CASINO_EMBED_TITLE').format(user.name),
+            description=self.bot.localizations.get('CASINO_EMBED_DESCRIPTION')
+            .format(play_amount, self.get_user_balance(user) + play_amount)
+        )
         embed.set_image(url=self.unpulled_casino_url)
         casino_post: discord.Message = await message.channel.send(embed=embed) if message else \
             await interaction.channel.send(embed=embed)
@@ -296,8 +308,8 @@ class Plugin(Module):
             delete_after: int = 30 if (f != files[-1] or len(wins) == 0) else 0
             post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
             urls.append(post.attachments[0].url)
-            embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION')
+            embed = discord.Embed(title=self.bot.localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                  description=self.bot.localizations.get('CASINO_EMBED_DESCRIPTION')
                                   .format(play_amount, self.get_user_balance(user) + play_amount))
             embed.set_image(url=post.attachments[0].url)
             await self.casino_hide.send(embed=embed, delete_after=1.0)
@@ -305,8 +317,8 @@ class Plugin(Module):
         # post the casino images to the user
         i: int = 1
         for url in urls[1:]:
-            embed = discord.Embed(title=Localizations.get('CASINO_EMBED_TITLE').format(user.name),
-                                  description=Localizations.get('CASINO_EMBED_DESCRIPTION')
+            embed = discord.Embed(title=self.bot.localizations.get('CASINO_EMBED_TITLE').format(user.name),
+                                  description=self.bot.localizations.get('CASINO_EMBED_DESCRIPTION')
                                   .format(play_amount, self.get_user_balance(user) + play_amount if i < len(files) - 1 \
                                       else self.get_user_balance(user) + amount))
             embed.set_image(url=url)
@@ -315,17 +327,17 @@ class Plugin(Module):
             if i == len(files):
                 await asyncio.sleep(3)
                 if len(wins) > 0 and amount >= 0:
-                    msg = await self.bot.commands.message(Localizations.get('CASINO_WIN').
+                    msg = await self.bot.commands.message(self.bot.localizations.get('CASINO_WIN').
                                                           format(self.bot.client.get_user(user.id).mention,
                                                                  '{:,}'.format(amount)),
                                                           message, interaction, channel_send=True)
                     await asyncio.sleep(2)
                 elif len(wins) > 0 > amount:
-                    msg = await self.bot.commands.message(Localizations.get('CASINO_WIN_BAN').format(
+                    msg = await self.bot.commands.message(self.bot.localizations.get('CASINO_WIN_BAN').format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                     await asyncio.sleep(10)
                 else:
-                    msg = await self.bot.commands.message(Localizations.get('CASINO_LOSE').format(
+                    msg = await self.bot.commands.message(self.bot.localizations.get('CASINO_LOSE').format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                 self.casino_times[ch_id] = 0
                 await asyncio.sleep(4)

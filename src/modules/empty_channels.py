@@ -1,3 +1,7 @@
+"""
+This plugin deletes all the message in the clearable channels (PURGE_CHANNELS) after 3 hours (PURGE_CHANNEL_HOURS).
+"""
+
 from datetime import datetime, timedelta
 from dateutil.tz import gettz
 import discord
