@@ -215,8 +215,8 @@ class Plugin(Module):
                 await self.bot.commands.error(self.bot.localizations.get('GIVE_GUIDE'), message)
                 return
         sum = min(self.get_user_balance(user), sum)
-        if sum <= 0:
-            await self.bot.commands.error(self.bot.localizations.get('GIVE_MUST_BE_POSITIVE'), message, interaction)
+        if sum <= 10000:
+            await self.bot.commands.error(self.bot.localizations.get('GIVE_MUST_BE_OVER_10000'), message, interaction)
             return
         self.balances[user.id]['points'] -= sum
         if target_user.id not in self.balances:
