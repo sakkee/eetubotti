@@ -93,5 +93,11 @@
     "TOO_LOW_BALANCE": "Huutista sun saldo on liian pieni, et pysty pelaa :D",
     "BALANCES_DESCRIPTION": "Top 10 saldoa",
     "BALANCES_TITLE": "**TOP 10 saldoa:**\n",
-    "BALANCES_ROW": "> {0}. **{1}** {2} pistettä\n"
+    "BALANCES_ROW": "> {0}. **{1}** {2} pistettä\n",
+    "GIVE_DESCRIPTION": "Anna käyttäjälle saldoa",
+    "GIVE_TOO_POOR": "Ei sulla ole saldoa annettavaks :D huutista sulle",
+    "GIVE_CANT_SELF": "et sä voi antaa ittelles saldoa :D",
+    "GIVE_GUIDE": "`!give {käyttäjä} {summa}`",
+    "GIVE_MUST_BE_POSITIVE": "mitä helevatan negatiivista saldoa koitat antaa? ? kunnon jutku,,",
+    "GIVE_SUCCESS": "Käyttäjä **{0}** antoi käyttäjälle **{1}** {2} saldoa! Huutista mikä cuck :D"
 }
