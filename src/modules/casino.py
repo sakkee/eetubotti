@@ -7,6 +7,7 @@ Commands:
     !saldo
     !saldot
     !give
+    !maksuhäiriöt
 """
 
 from dataclasses import field, dataclass
@@ -166,6 +167,25 @@ class Plugin(Module):
                 target_user=käyttäjä,
                 sum=summa
             )
+
+        @self.bot.commands.register(command_name='maksuhäiriöt', function=self.low_balances,
+                                    description=self.bot.localizations.get('LOW_BALANCES_DESCRIPTION'),
+                                    commands_per_day=5, timeout=30)
+        async def top_balances(interaction: discord.Interaction):
+            await self.bot.commands.commands['maksuhäiriöt'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+    async def low_balances(self, user: User, message: discord.Message | None = None,
+                           interaction: discord.Interaction | None = None, **kwargs):
+        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users]
+        sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: tup[1])[:10]
+        msg: str = self.bot.localizations.get('LOW_BALANCES_TITLE')
+        for i in range(len(sorted_balance_list)):
+            msg += self.bot.localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0],
+                                                                     '{:,}'.format(sorted_balance_list[i][1]))
+        await self.bot.commands.message(msg, message, interaction, delete_after=25)
 
     async def give(self, user: User, message: discord.Message | None = None,
                    interaction: discord.Interaction | None = None,

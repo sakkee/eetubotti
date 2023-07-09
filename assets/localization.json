@@ -99,5 +99,7 @@
     "GIVE_CANT_SELF": "et sä voi antaa ittelles saldoa :D",
     "GIVE_GUIDE": "`!give {käyttäjä} {summa}`",
     "GIVE_MUST_BE_POSITIVE": "mitä helevatan negatiivista saldoa koitat antaa? ? kunnon jutku,,",
-    "GIVE_SUCCESS": "Käyttäjä **{0}** antoi käyttäjälle **{1}** {2} saldoa! Huutista mikä cuck :D"
+    "GIVE_SUCCESS": "Käyttäjä **{0}** antoi käyttäjälle **{1}** {2} saldoa! Huutista mikä cuck :D",
+    "LOW_BALANCES_TITLE": "**TOP 10 maksuhäiriöisintä:**\n",
+    "LOW_BALANCES_DESCRIPTION": "Näyttää servun 10 pahinta maksuhäiriö tyyppiä"
 }
