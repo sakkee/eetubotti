@@ -121,6 +121,7 @@ class Bot(Module):
         self.modules[:] = [x for x in self.modules if x != found_module]
         i = importlib.import_module(found_module.__class__.__module__)
         plugin = importlib.reload(i)
+        self.localizations.load()
         self.modules.append(plugin.Plugin(self))
         await self.modules[-1].on_ready()
         await self.commands.message(self.localizations.get('MODULE_RELOADED').format(found_module.__class__.__module__),

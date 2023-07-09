@@ -6,6 +6,8 @@ Commands:
     !kasino
     !saldo
     !saldot
+    !give
+    !maksuhäiriöt
 """
 
 from dataclasses import field, dataclass
@@ -127,7 +129,7 @@ class Plugin(Module):
         self.casino_hide = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
 
         @self.bot.commands.register(command_name='kasino', function=self.casino,
-                                    description=self.bot.localizations.get('CASINO_DESCRIPTION'), commands_per_day=10,
+                                    description=self.bot.localizations.get('CASINO_DESCRIPTION'), commands_per_day=30,
                                     timeout=600)
         async def kasino(interaction: discord.Interaction, summa: int = 100000):
             await self.bot.commands.commands['kasino'].execute(
@@ -137,7 +139,7 @@ class Plugin(Module):
             )
 
         @self.bot.commands.register(command_name='saldo', function=self.balance,
-                                    description=self.bot.localizations.get('BALANCE_DESCRIPTION'), commands_per_day=20,
+                                    description=self.bot.localizations.get('BALANCE_DESCRIPTION'), commands_per_day=30,
                                     timeout=10)
         async def balance(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['saldo'].execute(
@@ -154,6 +156,76 @@ class Plugin(Module):
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction
             )
+
+        @self.bot.commands.register(command_name='give', function=self.give,
+                                    description=self.bot.localizations.get('GIVE_DESCRIPTION'), commands_per_day=10,
+                                    timeout=10)
+        async def give(interaction: discord.Interaction, käyttäjä: discord.User, summa: int = Constants.MAX_AMOUNT):
+            await self.bot.commands.commands['give'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction,
+                target_user=käyttäjä,
+                sum=summa
+            )
+
+        @self.bot.commands.register(command_name='maksuhäiriöt', function=self.low_balances,
+                                    description=self.bot.localizations.get('LOW_BALANCES_DESCRIPTION'),
+                                    commands_per_day=5, timeout=30)
+        async def top_balances(interaction: discord.Interaction):
+            await self.bot.commands.commands['maksuhäiriöt'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+    async def low_balances(self, user: User, message: discord.Message | None = None,
+                           interaction: discord.Interaction | None = None, **kwargs):
+        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users]
+        sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: tup[1])[:10]
+        msg: str = self.bot.localizations.get('LOW_BALANCES_TITLE')
+        for i in range(len(sorted_balance_list)):
+            if sorted_balance_list[i][1] >= 0:
+                break
+            msg += self.bot.localizations.get('BALANCES_ROW').format(i, sorted_balance_list[i][0],
+                                                                     '{:,}'.format(sorted_balance_list[i][1]))
+        await self.bot.commands.message(msg, message, interaction, delete_after=25)
+
+    async def give(self, user: User, message: discord.Message | None = None,
+                   interaction: discord.Interaction | None = None,
+                   target_user: discord.User | None = None, sum: int = Constants.MAX_AMOUNT):
+        if self.get_user_balance(user) < 0:
+            await self.bot.commands.error(self.bot.localizations.get('GIVE_TOO_POOR'), message, interaction)
+            return
+        if not target_user:
+            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
+            return
+        if target_user == user:
+            await self.bot.commands.error(self.bot.localizations.get('GIVE_CANT_SELF'), message, interaction)
+            return
+        if message:
+            contents: list[str] = message.content.lower().split(' ')
+            if len(contents) < 3:
+                # no sum given
+                #self.reset_cooldown(user)
+                await self.bot.commands.error(self.bot.localizations.get('GIVE_GUIDE'), message)
+                return
+            try:
+                sum = int(contents[2])
+            except ValueError:
+                #self.reset_cooldown(user)
+                await self.bot.commands.error(self.bot.localizations.get('GIVE_GUIDE'), message)
+                return
+        sum = min(self.get_user_balance(user), sum)
+        if sum <= 10000:
+            await self.bot.commands.error(self.bot.localizations.get('GIVE_MUST_BE_OVER_10000'), message, interaction)
+            return
+        self.balances[user.id]['points'] -= sum
+        if target_user.id not in self.balances:
+            self.balances[target_user.id] = {'points': self.user_points_to_balance(target_user.stats.points) + sum,
+                                             'reduce_points': self.user_points_to_balance(target_user.stats.points)}
+        self.balances[target_user.id]['points'] += sum
+        self.save_balances()
+        await self.bot.commands.message(self.bot.localizations.get('GIVE_SUCCESS')
+                                        .format(user.name, target_user.name, '{:,}'.format(sum)), message, interaction)
 
     async def top_balances(self, user: User, message: discord.Message | None = None,
                            interaction: discord.Interaction | None = None, **kwargs):
@@ -383,8 +455,8 @@ class Plugin(Module):
                 await interaction.guild.ban(interaction.user, delete_message_days=0, reason='Megiskasino bän')
 
     def reset_cooldown(self, user: User):
-        if str(user.id) in self.bot.commands.commands['kasino'].timeouts:
-            self.bot.commands.commands['kasino'].timeouts[str(user.id)] = 0
+        if user.id in self.bot.commands.commands['kasino'].timeouts:
+            self.bot.commands.commands['kasino'].timeouts[user.id] = 0
 
     @staticmethod
     def get_random_numbers(max: int, count: int) -> list[int]:
