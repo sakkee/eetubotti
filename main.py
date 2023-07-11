@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-token = os.getenv("TOKEN")
+token: str = os.getenv("TOKEN")
 
 if __name__ == '__main__':
     discord_bot = Bot(token=token)

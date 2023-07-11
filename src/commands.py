@@ -7,7 +7,7 @@ import re
 from src.objects import User
 from src.constants import CHANNELS, ROLES, SERVER_ID
 import discord
-from src.modules.module import Module
+from src.basemodule import BaseModule
 
 
 @dataclass
@@ -163,7 +163,7 @@ class Command:
 
 
 @dataclass
-class CommandManager(Module):
+class CommandManager(BaseModule):
     """Command Manager that handles all the commands.
 
     All commands are registered to this class. This module must be the first initialized in the bot's modules.

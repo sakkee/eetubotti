@@ -15,7 +15,7 @@ from src.constants import *
 import src.functions as functions
 from src.objects import User
 import time
-from .module import Module
+from src.basemodule import BaseModule
 
 DEFAULT_BAN_LENGTH: int = 12
 DEFAULT_EMOJI_BAN_LENGTH: int = 3
@@ -23,7 +23,7 @@ DEFAULT_MUTE_LENGTH: int = 3
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     ban_list: dict[discord.User, float] = field(default_factory=dict)
     mute_list: dict[discord.User, float] = field(default_factory=dict)
     timeout_list: dict[discord.User, float] = field(default_factory=dict)

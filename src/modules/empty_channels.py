@@ -7,11 +7,11 @@ from dateutil.tz import gettz
 import discord
 from dataclasses import dataclass
 from src.constants import *
-from .module import Module
+from src.basemodule import BaseModule
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     last_check_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE)) - timedelta(days=1)
 
     async def on_message(self, message: discord.Message):

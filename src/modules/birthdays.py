@@ -15,7 +15,7 @@ from dataclasses import field, dataclass, asdict
 from src.objects import User
 from src.constants import DEFAULT_TIMEZONE, ROLES, CHANNELS
 import src.functions as functions
-from .module import Module
+from src.basemodule import BaseModule
 
 BIRTHDAY_UPDATE_INTERVAL: int = 6 * 30 * 24 * 60 * 60  # 6 months
 
@@ -37,7 +37,7 @@ class Birthday:
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     birthdays: dict[int, Birthday] = field(default_factory=dict)
 
     def load_birthdays(self):

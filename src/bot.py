@@ -2,9 +2,9 @@ import os
 from datetime import datetime
 from dateutil.tz import gettz
 import importlib
-from src.discord_events import Discord_Events
+from src.events import EventDispatcher, EventHandler
 from src.objects import *
-from src.modules.module import Module
+from src.basemodule import BaseModule
 from src.modules.module_list import module_list
 from src.localizations import Localization
 from src.constants import *
@@ -13,7 +13,7 @@ from src.commands import CommandManager
 
 
 @dataclass
-class Bot(Module):
+class Bot(EventHandler):
     """The main Bot class that acts as the core.
 
     This class should handle all the core logic, e.g. including keeping track of time and keeping track of users,
@@ -48,9 +48,9 @@ class Bot(Module):
         current_day (datetime): The current day's datetime. Used to track when the LOCAL day has changed.
         last_day (datetime): UTC datetime. Used to track when the UTC day has changed.
     """
-    token: str = ''
+    token: str
     launching: bool = True
-    events: Discord_Events = None
+    events: EventDispatcher = None
     localizations: Localization = field(default_factory=lambda: Localization('assets/localization.json'))
     commands: CommandManager = None
     users: list[User] = None
@@ -59,7 +59,7 @@ class Bot(Module):
     database: Database = None
     client: discord.Client = None
     client_tree: discord.app_commands.CommandTree = None
-    modules: list[Module] = field(default_factory=list)
+    modules: list[BaseModule] = field(default_factory=list)
     server: discord.Guild = None
     current_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
     last_day: datetime = datetime.utcnow()
@@ -83,7 +83,7 @@ class Bot(Module):
         self.users = self.database.get_users()
         self.client = discord.Client(guild_subscriptions=True, intents=discord.Intents.all())
         self.client_tree = discord.app_commands.CommandTree(self.client)
-        self.events = Discord_Events(self)
+        self.events = EventDispatcher(self)
         self.events.link_events()
 
     def start(self):

@@ -10,11 +10,11 @@ import discord
 import random
 from dataclasses import dataclass
 from src.objects import User
-from .module import Module
+from src.basemodule import BaseModule
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     async def on_ready(self):
         @self.bot.commands.register(command_name='tuplat', function=self.double,
                                     description=self.bot.localizations.get('DOUBLE_DESCRIPTION'),

@@ -20,14 +20,14 @@ from src.objects import User, Stats, Message, Reaction, VoiceDate
 import time
 from . import rank_card
 import src.functions as functions
-from src.modules.module import Module
+from src.basemodule import BaseModule
 
 MAXIMUM_POINTS_PER_INTERVAL: int = 256  # how many points at maximum per POINTS_INTERVAL minutes
 POINTS_INTERVAL: int = 5  # minutes for the message buffer
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     active_threshold: int = 10000000
     old_mins: int = -1
     current_mins: int = -1
