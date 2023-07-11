@@ -38,8 +38,8 @@
 
 ## Development (creating a new module)
 1. Create a python file or a python package on `src/modules/` folder
-2. Use the `src.modules.module.Module` as `Plugin`-named class's base class (look at other modules)
+2. Use the `src.basemodule.BaseModule` as your plugin's class's base class (look at other modules)
 3. Add the new module to `src/modules/module_list.py`
 
 ## Changing texts or language
-1. Edit or add values in `src/localizations.py`
+1. Edit or add values in `assets/localization.json`
