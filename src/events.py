@@ -36,8 +36,14 @@ class EventDispatcher:
         See Also:
             https://discordpy.readthedocs.io/en/stable/api.html#event-reference
         """
+
+        # following events are non discord events, and thus don't need to be registered to the discord client
+        non_discord_events: list[str] = [
+            'on_new_day'
+        ]
+
         for attribute in dir(self):
-            if not attribute.startswith('on_'):
+            if not attribute.startswith('on_') or attribute in non_discord_events:
                 continue
             if attribute not in dir(EventHandler):
                 print(f"Warning! {attribute} is not found in src.events.EventHandler! Might cause an error runtime.")
