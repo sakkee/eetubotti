@@ -11,7 +11,7 @@ import os
 import json
 from dataclasses import field, dataclass, asdict
 from src.constants import CHANNELS, LEVEL_CHANNELS
-from .module import Module
+from src.basemodule import BaseModule
 
 ANTTU_IDS: list[int] = [424582449666719745, 295540519616905216, 660316187594457089]
 
@@ -39,7 +39,7 @@ class Msg:
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     enabled: bool = True
     anttu_messages: list[Msg] = field(default_factory=list)
     increment: int = 0

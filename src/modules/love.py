@@ -8,11 +8,11 @@ import discord
 import json
 from dataclasses import field, dataclass
 from src.objects import User
-from .module import Module
+from src.basemodule import BaseModule
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     loves: dict[int, User] = field(default_factory=dict)
 
     async def on_ready(self):

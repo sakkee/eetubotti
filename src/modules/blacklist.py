@@ -14,7 +14,7 @@ from src.objects import User
 import src.functions as functions
 import time
 from urllib.parse import unquote
-from .module import Module
+from src.basemodule import BaseModule
 
 
 @dataclass
@@ -49,7 +49,7 @@ class BlacklistedList:
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     blacklist: list[BlacklistedString] = None
     blacklist_list: list[BlacklistedList] = None
     blacklist_files: list[BlacklistedFile] = None

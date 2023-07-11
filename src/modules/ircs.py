@@ -10,13 +10,13 @@ import discord
 import requests
 from pyquery import PyQuery
 from src.objects import User, Irc
-from .module import Module
+from src.basemodule import BaseModule
 
 base_link: str = 'https://irc-galleria.net/user/'
 random: str = 'https://irc-galleria.net/random'
 
 
-class Plugin(Module):
+class Plugin(BaseModule):
     def clear_ircs(self):
         for user in self.bot.users:
             user.irc = None

@@ -14,7 +14,7 @@ from dataclasses import field, dataclass
 from src.objects import User
 from src.constants import CHANNELS
 import src.functions as functions
-from .module import Module
+from src.basemodule import BaseModule
 import os
 import discord
 import datetime
@@ -101,7 +101,7 @@ class Chip:
 
 
 @dataclass
-class Plugin(Module):
+class Plugin(BaseModule):
     casino_times: dict = field(default_factory=dict)
     casino_order: list[int] = field(default_factory=lambda: [0, 1, 2, 3])
     warned: bool = False
