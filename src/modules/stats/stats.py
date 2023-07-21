@@ -141,7 +141,7 @@ class Plugin(BaseModule):
         if not target_user or not self.bot.get_user_by_id(target_user.id):
             await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
             return
-        streak: int = functions.get_user_streak(user, self.bot.daylist)
+        streak: int = functions.get_user_streak(target_user, self.bot.daylist)
         await self.bot.commands.message(self.bot.localizations.get('STREAK_SCORE').format(target_user.name, streak),
                                         message, interaction, delete_after=10)
 
