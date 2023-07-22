@@ -215,7 +215,7 @@ class Plugin(BaseModule):
                 await self.bot.commands.error(self.bot.localizations.get('GIVE_GUIDE'), message)
                 return
         sum = min(self.get_user_balance(user), sum)
-        if sum <= 10000:
+        if sum < 10000:
             await self.bot.commands.error(self.bot.localizations.get('GIVE_MUST_BE_OVER_10000'), message, interaction)
             return
         self.balances[user.id]['points'] -= sum
@@ -254,11 +254,6 @@ class Plugin(BaseModule):
                      interaction: discord.Interaction | None = None,
                      sum: int = Constants.MAX_AMOUNT,
                      **kwargs):
-        # parse betting sum
-        play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
-        if play_amount < Constants.MIN_AMOUNT:
-            await self.bot.commands.error(self.bot.localizations.get('TOO_LOW_BALANCE'), message, interaction)
-            return
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
@@ -268,8 +263,8 @@ class Plugin(BaseModule):
                 return
             if contents[1] != 'max':
                 try:
-                    play_amount = int(contents[1])
-                    if play_amount > Constants.MAX_AMOUNT or play_amount < Constants.MIN_AMOUNT:
+                    sum = int(contents[1])
+                    if sum > Constants.MAX_AMOUNT or sum < Constants.MIN_AMOUNT:
                         self.reset_cooldown(user)
                         await self.bot.commands.error(
                             self.bot.localizations.get('CASINO_WRONG_SUM')
@@ -280,6 +275,12 @@ class Plugin(BaseModule):
                     self.reset_cooldown(user)
                     await self.bot.commands.error(self.bot.localizations.get('CASINO_GUIDE'), message)
                     return
+
+        # parse betting sum
+        play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
+        if play_amount < Constants.MIN_AMOUNT:
+            await self.bot.commands.error(self.bot.localizations.get('TOO_LOW_BALANCE'), message, interaction)
+            return
 
         # manage casino cooldown to prevent multiple casinos the same time on the same channel
         ts = functions.get_current_timestamp()
@@ -398,6 +399,9 @@ class Plugin(BaseModule):
             i += 1
             if i == len(files):
                 await asyncio.sleep(3)
+                if amount != 0:
+                    self.balances[user.id]['points'] += amount
+                    self.save_balances()
                 if len(wins) > 0 and amount >= 0:
                     msg = await self.bot.commands.message(self.bot.localizations.get('CASINO_WIN').
                                                           format(self.bot.client.get_user(user.id).mention,
@@ -436,10 +440,11 @@ class Plugin(BaseModule):
             if i == len(files[1:]) and len(wins) > 0:
                 continue
             # remove unnecessary files
-            os.remove(file)
+            try:
+                os.remove(file)
+            except OSError:
+                pass
 
-        self.balances[user.id]['points'] += amount
-        self.save_balances()
         # user won negative sum, thus ban
         if amount < 0:
             if message:
