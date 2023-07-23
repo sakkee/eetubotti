@@ -285,7 +285,6 @@ class Plugin(BaseModule):
         # manage casino cooldown to prevent multiple casinos the same time on the same channel
         ts = functions.get_current_timestamp()
         ch_id: str = str(message.channel.id) if message else str(interaction.channel_id)
-        u_id: str = str(message.author.id) if message else str(interaction.user.id)
         if ch_id not in self.casino_times:
             self.casino_times[ch_id] = 0
         if ts - self.casino_times[ch_id] <= 30:
