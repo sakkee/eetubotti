@@ -3,24 +3,24 @@ import calendar
 import datetime
 import discord
 import pytz
-from src.constants import *
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.objects import User, Stats, ActivityDate, Points
+    from src.objects import User, Stats
     from src.bot import Bot
 
 
-def utc_to_local(utc_dt: datetime.datetime) -> datetime.datetime:
+def utc_to_local(utc_dt: datetime.datetime, timezone: str) -> datetime.datetime:
     """UTC datetime to default timezone datetime.
 
     Args:
         utc_dt (datetime.datetime): the UTC datetime to be converted to DEFAULT_TIMEZONE.
+        timezone (str): the timezone of the bot
 
     Returns:
         Localized datetime object.
     """
-    local_tz = pytz.timezone(DEFAULT_TIMEZONE)
+    local_tz = pytz.timezone(timezone)
     local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
     return local_tz.normalize(local_dt)
 
@@ -219,10 +219,10 @@ def get_last_14_day_points(user: User, daylist: Bot.daylist) -> int:
     return activity_points
 
 
-def check_if_administrator(member: discord.Member) -> bool:
+def check_if_administrator(member: discord.Member, role_full_admin: int = 0) -> bool:
     """Check if the member has administrator permissions on the server."""
     for role in member.roles:
-        if role.id == ROLES.WHITENAME:
+        if role.id == role_full_admin:
             return True
         for permission in role.permissions:
             if permission[0] == 'administrator' and permission[1]:
@@ -230,10 +230,10 @@ def check_if_administrator(member: discord.Member) -> bool:
     return False
 
 
-def check_if_can_ban(member: discord.Member) -> bool:
+def check_if_can_ban(member: discord.Member, ban_roles: list[int]) -> bool:
     """Check whether the user is allowed to ban people."""
     for role in member.roles:
-        if role.id == ROLES.WHITENAME:
+        if role.id in ban_roles:
             return True
         for permission in role.permissions:
             if permission[0] == 'ban_members' and permission[1]:

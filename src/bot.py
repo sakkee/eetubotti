@@ -2,12 +2,12 @@ import os
 from datetime import datetime
 from dateutil.tz import gettz
 import importlib
+from src.config import CfgParser
 from src.events import EventDispatcher, EventHandler
 from src.objects import *
 from src.basemodule import BaseModule
 from src.modules.module_list import module_list
 from src.localizations import Localization
-from src.constants import *
 from src.database.database import Database
 from src.commands import CommandManager
 
@@ -22,9 +22,6 @@ class Bot(EventHandler):
     Specific code should be only in child modules that are found in src/modules/ without changing the core.
     In case of changing only a child module, you can reload the module by using "reload_module" application command
     on Discord, so no need to restart the bot.
-
-    Args:
-        token (str): the token of the bot.
 
     Attributes:
         token (str): the discord token of the bot.
@@ -48,9 +45,10 @@ class Bot(EventHandler):
         current_day (datetime): The current day's datetime. Used to track when the LOCAL day has changed.
         last_day (datetime): UTC datetime. Used to track when the UTC day has changed.
     """
-    token: str
+    token: str = None
     launching: bool = True
     events: EventDispatcher = None
+    config: CfgParser = field(default_factory=lambda: CfgParser())
     localizations: Localization = field(default_factory=lambda: Localization('assets/localization.json'))
     commands: CommandManager = None
     users: list[User] = None
@@ -61,7 +59,7 @@ class Bot(EventHandler):
     client_tree: discord.app_commands.CommandTree = None
     modules: list[BaseModule] = field(default_factory=list)
     server: discord.Guild = None
-    current_day: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
+    current_day: datetime = None
     last_day: datetime = datetime.utcnow()
 
     def __post_init__(self):
@@ -70,9 +68,10 @@ class Bot(EventHandler):
         Create the database manager object and setup the database, get reactions, active days and users. Initialize
         the discord client and refresh the events.
         """
+        self.token = self.config.TOKEN
+        self.current_day = datetime.now(tz=gettz(self.config.TIMEZONE))
         if not os.path.exists(f'data'):
             os.mkdir(f'data')
-
         if not os.path.exists(f'data/profile_images'):
             os.mkdir(f'data/profile_images')
         self.refresh_modules()
@@ -132,7 +131,7 @@ class Bot(EventHandler):
         async for member in self.server.fetch_members(limit=None):
             await self.add_if_user_not_exist(member)
         print('Users synced!')
-        await self.client.get_channel(CHANNELS.YLEINEN).send(self.localizations.get('ON_BOOT'))
+        await self.client.get_channel(self.config.CHANNEL_GENERAL).send(self.localizations.get('ON_BOOT'))
 
     async def add_if_user_not_exist(self, member: discord.Member | discord.User, is_message: bool = False):
         """Add User if it doesn't already exist.
@@ -210,12 +209,12 @@ class Bot(EventHandler):
         return filepath
 
     async def on_new_day(self, date_now: datetime):
-        self.current_day = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
+        self.current_day = datetime.now(tz=gettz(self.config.TIMEZONE))
 
     async def on_message(self, message: discord.Message):
         # default timezone midnight
-        if datetime.now(tz=gettz(DEFAULT_TIMEZONE)).date() != self.current_day.date() and not self.launching:
-            await self.events.on_new_day(datetime.now(tz=gettz(DEFAULT_TIMEZONE)))
+        if datetime.now(tz=gettz(self.config.TIMEZONE)).date() != self.current_day.date() and not self.launching:
+            await self.events.on_new_day(datetime.now(tz=gettz(self.config.TIMEZONE)))
 
         # UTC midnight
         if message.created_at.date() != self.last_day.date() and not self.launching:
@@ -224,7 +223,7 @@ class Bot(EventHandler):
 
     async def on_ready(self):
         self.launching = False
-        self.server = self.client.get_guild(SERVER_ID)
+        self.server = self.client.get_guild(self.config.SERVER_ID)
         await self.sync_users()
 
     async def on_member_join(self, member: discord.Member):

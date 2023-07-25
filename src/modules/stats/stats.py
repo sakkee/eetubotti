@@ -15,7 +15,6 @@ import asyncio
 from io import BytesIO
 from datetime import datetime
 from dataclasses import dataclass, field
-from src.constants import *
 from src.objects import User, Stats, Message, Reaction, VoiceDate
 import time
 from . import rank_card
@@ -81,7 +80,8 @@ class Plugin(BaseModule):
             )
 
         @self.bot.commands.register(command_name='grindaajat', function=self.activity_top,
-                                    description=self.bot.localizations.get('ACTIVITY_TOP_DESCRIPTION'), commands_per_day=5,
+                                    description=self.bot.localizations.get('ACTIVITY_TOP_DESCRIPTION'),
+                                    commands_per_day=5,
                                     timeout=5)
         async def grinders(interaction: discord.Interaction):
             await self.bot.commands.commands['grindaajat'].execute(
@@ -200,25 +200,26 @@ class Plugin(BaseModule):
         await self.bot.commands.message(sendable_message, message, interaction, delete_after=25)
 
     async def update_actives(self):
-        active_role: discord.Role = self.bot.server.get_role(ROLES.ACTIVE)
+        active_role: discord.Role = self.bot.server.get_role(self.bot.config.ROLE_ACTIVE)
         self.active_threshold = functions.get_active_threshold(self.bot.users, self.bot.daylist)
         active_users: list[User] = [x[0] for x in
                                     functions.get_actives(self.bot.users, self.bot.daylist, 14, 15, False)]
 
         for user in self.bot.users:
-            if not user.is_in_guild or user.id in IGNORE_LEVEL_USERS:
+            if not user.is_in_guild or user.id in self.bot.config.IGNORE_LEVEL_USERS:
                 continue
             member: discord.Member = self.bot.server.get_member(user.id)
             try:
-                if ROLES.ACTIVE not in user.roles and user in active_users:
+                if self.bot.config.ROLE_ACTIVE not in user.roles and user in active_users:
                     await member.add_roles(active_role)
 
-                elif ROLES.ACTIVE in user.roles and user not in active_users:
+                elif self.bot.config.ROLE_ACTIVE in user.roles and user not in active_users:
                     await member.remove_roles(active_role)
 
-                if ROLES.HOMIE in user.roles and (time.time() - user.stats.last_post_time > 24 * 60 * 60 * 3
-                                                  or ROLES.SQUAD not in user.roles):
-                    await member.remove_roles(self.bot.server.get_role(ROLES.HOMIE))
+                if self.bot.config.ROLE_ACTIVE_SQUAD in user.roles and \
+                        (time.time() - user.stats.last_post_time > 24 * 60 * 60 * 3
+                         or self.bot.config.ROLE_SQUAD not in user.roles):
+                    await member.remove_roles(self.bot.server.get_role(self.bot.config.ROLE_ACTIVE_SQUAD))
             except discord.errors.Forbidden:
                 print(f"Error! Could not edit {member.name} roles. Likely reason is that the bot's role is too low.")
                 print("Please make the bot's role the top-most role in the server.")
@@ -229,7 +230,7 @@ class Plugin(BaseModule):
         await asyncio.sleep(15)
         active_users: list[User] = [x[0] for x in
                                     functions.get_actives(self.bot.users, self.bot.daylist, 14, 15, False)]
-        active_role: discord.Role = self.bot.server.get_role(ROLES.ACTIVE)
+        active_role: discord.Role = self.bot.server.get_role(self.bot.config.ROLE_ACTIVE)
         member: discord.Member = self.bot.server.get_member(user.id)
         await self.refresh_level_roles(user)
         if user in active_users:
@@ -262,8 +263,8 @@ class Plugin(BaseModule):
                     (message.attachments > 0 or message.content not in cache):
                 the_user.stats.activity_points_today += 1
                 sending_streak = True
-            if ROLES.SQUAD in the_user.roles and ROLES.HOMIE not in the_user.roles:
-                await elem.author.add_roles(self.bot.server.get_role(ROLES.HOMIE))
+            if self.bot.config.ROLE_SQUAD in the_user.roles and self.bot.config.ROLE_ACTIVE_SQUAD not in the_user.roles:
+                await elem.author.add_roles(self.bot.server.get_role(self.bot.config.ROLE_ACTIVE_SQUAD))
 
         if (old and mins != self.old_mins) or (not old and mins != self.current_mins):
             if old:
@@ -356,13 +357,14 @@ class Plugin(BaseModule):
         print(f'Last post id: {str(last_post_id)}')
         print('Fetching until last post found')
         count: int = 0
-        for CHANNEL in LEVEL_CHANNELS:
+        for CHANNEL in self.bot.config.LEVEL_CHANNELS:
             async for elem in self.bot.client.get_channel(CHANNEL).history(limit=20000000):
                 if elem.id <= last_post_id:
                     break
                 self.last_day = elem.created_at
                 count += 1
-                if elem.author.bot and elem.author.id not in [623974457404293130, 732616359367802891]: # anttubot, etyty
+                if elem.author.bot and elem.author.id not in [623974457404293130,
+                                                              732616359367802891]:  # anttubot, etyty
                     continue
 
                 await self.new_message(elem, old=True)
@@ -371,7 +373,8 @@ class Plugin(BaseModule):
 
     async def on_message(self, message: discord.Message):
         if (message.author.bot and message.author.id not in [623974457404293130, 732616359367802891]) or \
-                message.channel.id not in LEVEL_CHANNELS or message.channel.guild.id != SERVER_ID:
+                message.channel.id not in self.bot.config.LEVEL_CHANNELS or \
+                message.channel.guild.id != self.bot.config.SERVER_ID:
             return
 
         if message.created_at.date() != self.last_day.date() and not self.bot.launching:
@@ -380,15 +383,16 @@ class Plugin(BaseModule):
         await self.new_message(message)
 
     async def refresh_level_roles(self, user: User):
-        level_roles: list[int] = ROLES.get_levels(user.level)
+        level_roles: list[int] = self.bot.config.get_level_roles(user.level)
         removable_roles: list[discord.Role] = [
-            self.bot.server.get_role(x) for x in user.roles if x in ROLES.levels and x not in level_roles
+            self.bot.server.get_role(x) for x in user.roles if x in self.bot.config.ALL_LEVEL_ROLES \
+                                                               and x not in level_roles
         ]
         addable_roles: list[discord.Role] = [
             self.bot.server.get_role(x) for x in level_roles if x not in user.roles
         ]
         member = self.bot.server.get_member(user.id)
-        if member is None or member.bot or member.id in IGNORE_LEVEL_USERS:  # wasabi exception
+        if member is None or member.bot or member.id in self.bot.config.IGNORE_LEVEL_USERS:  # wasabi exception
             return
         for role in removable_roles:
             await member.remove_roles(role)
@@ -403,8 +407,8 @@ class Plugin(BaseModule):
         timestamp: float = functions.get_current_timestamp()
 
         # user is joining a NON-AFK voice channel from AFK or not from voice at all
-        if (before.channel is None or before.channel.id == CHANNELS.AFK_CHANNEL) and \
-                after.channel is not None and after.channel.id != CHANNELS.AFK_CHANNEL:
+        if (before.channel is None or before.channel.id == self.bot.config.CHANNEL_AFK_VOICE_CHANNEL) and \
+                after.channel is not None and after.channel.id != self.bot.config.CHANNEL_AFK_VOICE_CHANNEL:
             user.voicedate = VoiceDate(user.id, timestamp, None)
             user.vc_join_time = timestamp
             if user not in self.users_in_voice:
@@ -416,8 +420,8 @@ class Plugin(BaseModule):
                     usr.voicedate.mark_active(timestamp)
 
         # user is leaving voice or joining AFK channel
-        elif before.channel is not None and before.channel.id != CHANNELS.AFK_CHANNEL and \
-                (after.channel is None or after.channel.id == CHANNELS.AFK_CHANNEL):
+        elif before.channel is not None and before.channel.id != self.bot.config.CHANNEL_AFK_VOICE_CHANNEL and \
+                (after.channel is None or after.channel.id == self.bot.config.CHANNEL_AFK_VOICE_CHANNEL):
             if user.vc_join_time is None:
                 return
             user.voicedate.mark_inactive(timestamp)
@@ -434,14 +438,14 @@ class Plugin(BaseModule):
             if activity_points > 0 and user.stats.activity_points_today == 0:
                 streak = functions.get_user_streak(user, self.bot.daylist)
                 if self.starting_day != self.last_day.day:
-                    await self.bot.client.get_channel(CHANNELS.YLEINEN).send(
+                    await self.bot.client.get_channel(self.bot.config.CHANNEL_GENERAL).send(
                         self.bot.localizations.get('NEW_STREAK').format(member.mention, str(streak)),
                         delete_after=10.0
                     )
             user.stats.activity_points_today += activity_points
             if not user.add_points(activity_points):
                 await self.refresh_level_roles(user)
-                await self.bot.client.get_channel(CHANNELS.YLEINEN).send(
+                await self.bot.client.get_channel(self.bot.config.CHANNEL_GENERAL).send(
                     self.bot.localizations.get('NEW_LEVEL').format(member.mention, str(user.level)))
             self.bot.database.add_voicedate(user.voicedate)
             user.voicedate = None

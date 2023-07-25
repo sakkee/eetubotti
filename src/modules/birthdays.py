@@ -13,7 +13,6 @@ from datetime import datetime, date
 from dateutil.tz import gettz
 from dataclasses import field, dataclass, asdict
 from src.objects import User
-from src.constants import DEFAULT_TIMEZONE, ROLES, CHANNELS
 import src.functions as functions
 from src.basemodule import BaseModule
 
@@ -83,7 +82,7 @@ class Plugin(BaseModule):
                 interaction=interaction
             )
 
-        await self.sync_birthdays(datetime.now(tz=gettz(DEFAULT_TIMEZONE)))
+        await self.sync_birthdays(datetime.now(tz=gettz(self.bot.config.TIMEZONE)))
 
     async def birthday(self, user: User, message: discord.Message | None = None,
                        interaction: discord.Interaction | None = None,
@@ -92,11 +91,12 @@ class Plugin(BaseModule):
         if not target_user:
             await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
             return
-        date_now: datetime = datetime.now(tz=gettz(DEFAULT_TIMEZONE))
+        date_now: datetime = datetime.now(tz=gettz(self.bot.config.TIMEZONE))
         if target_user == user and birthday and birthday != '0.0.0':
             if user.id in self.birthdays and \
                     date_now.timestamp() - self.birthdays.get(user.id).timestamp < BIRTHDAY_UPDATE_INTERVAL:
-                ok_day = functions.utc_to_local(datetime.fromtimestamp(self.birthdays[user.id].timestamp))
+                ok_day = functions.utc_to_local(datetime.fromtimestamp(self.birthdays[user.id].timestamp),
+                                                self.bot.config.TIMEZONE)
                 ok_delta = date_now - ok_day
                 days_until = BIRTHDAY_UPDATE_INTERVAL / 60 / 60 / 24 - ok_delta.days
                 msg = self.bot.localizations.get('BIRTHDAY_WAIT').format(int(days_until))
@@ -104,7 +104,8 @@ class Plugin(BaseModule):
                 return
 
             try:
-                birthday_date = functions.utc_to_local(datetime.strptime(birthday.split()[0], '%d.%m.%Y'))
+                birthday_date = functions.utc_to_local(datetime.strptime(birthday.split()[0], '%d.%m.%Y'),
+                                                       self.bot.config.TIMEZONE)
                 delta = date_now - birthday_date
                 if delta.days < 13 * 365:
                     await self.bot.commands.error(self.bot.localizations.get('BIRTHDAY_UNDERAGE'), message, interaction)
@@ -150,25 +151,25 @@ class Plugin(BaseModule):
         return True
 
     async def sync_birthdays(self, date_now: datetime):
-        birthday_role: discord.Role = self.bot.server.get_role(ROLES.BIRTHDAY)
+        birthday_role: discord.Role = self.bot.server.get_role(self.bot.config.ROLE_BIRTHDAY)
 
         for usr in self.bot.users:
             if not usr.is_in_guild:
                 continue
-            if ROLES.BIRTHDAY in usr.roles and not self.has_birthday(usr, date_now):
+            if self.bot.config.ROLE_BIRTHDAY in usr.roles and not self.has_birthday(usr, date_now):
                 member = self.bot.server.get_member(usr.id)
                 await member.remove_roles(birthday_role)
-            elif ROLES.BIRTHDAY not in usr.roles and self.has_birthday(usr, date_now):
+            elif self.bot.config.ROLE_BIRTHDAY not in usr.roles and self.has_birthday(usr, date_now):
                 member = self.bot.server.get_member(usr.id)
                 await member.add_roles(birthday_role)
 
                 if member.id == 212594150124552192:
-                    await self.bot.client.get_channel(CHANNELS.YLEINEN).send(
+                    await self.bot.client.get_channel(self.bot.config.CHANNEL_GENERAL).send(
                         self.bot.localizations.get('BIRTHDAY_ANNOUNCE_JUSU').format(member.mention),
                         file=discord.File(open('assets/birthdays/gondola_birthday.mp4', 'rb'),
                                           filename='synttarit.mp4'))
                 else:
-                    await self.bot.client.get_channel(CHANNELS.YLEINEN).send(
+                    await self.bot.client.get_channel(self.bot.config.CHANNEL_GENERAL).send(
                         self.bot.localizations.get('BIRTHDAY_ANNOUNCE').format(member.mention),
                         file=discord.File(open('assets/birthdays/gondola_birthday.mp4', 'rb'),
                                           filename="synttarit.mp4"))

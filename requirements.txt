@@ -1,7 +1,7 @@
-python-dotenv
 discord.py
 Pillow
 python-dateutil
 requests
 pyquery
 pytz
+configobj

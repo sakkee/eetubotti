@@ -77,7 +77,8 @@ class Plugin(BaseModule):
             self.blacklist_list = []
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.emoji.name != "⚫" or not functions.check_if_administrator(payload.member):
+        if payload.emoji.name != "⚫" or not functions.check_if_administrator(payload.member,
+                                                                             self.bot.config.ROLE_FULL_ADMINISTRATOR):
             return
         adding: bool = False
         message = await self.bot.client.get_channel(payload.channel_id).fetch_message(payload.message_id)
