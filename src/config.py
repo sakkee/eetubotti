@@ -149,7 +149,7 @@ class CfgParser:
 
     @property
     def PURGE_CHANNELS_INTERVAL_HOURS(self) -> int:
-        return self.get_config('MISC', 'PURGE_CHANNELS_INTERVAL_HOURS', 3)
+        return int(self.get_config('MISC', 'PURGE_CHANNELS_INTERVAL_HOURS', 3))
 
     @property
     def IGNORE_LEVEL_USERS(self) -> list[int]:
