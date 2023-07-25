@@ -12,7 +12,6 @@ Commands:
 
 from dataclasses import field, dataclass
 from src.objects import User
-from src.constants import CHANNELS
 import src.functions as functions
 from src.basemodule import BaseModule
 import os
@@ -126,7 +125,7 @@ class Plugin(BaseModule):
         else:
             self.load_balances()
 
-        self.casino_hide = self.bot.client.get_channel(CHANNELS.CASINO_HIDE_CHANNEL_ID)
+        self.casino_hide = self.bot.client.get_channel(self.bot.config.CHANNEL_CASINO_HIDE_CHANNEL)
 
         @self.bot.commands.register(command_name='kasino', function=self.casino,
                                     description=self.bot.localizations.get('CASINO_DESCRIPTION'), commands_per_day=30,
@@ -285,7 +284,6 @@ class Plugin(BaseModule):
         # manage casino cooldown to prevent multiple casinos the same time on the same channel
         ts = functions.get_current_timestamp()
         ch_id: str = str(message.channel.id) if message else str(interaction.channel_id)
-        u_id: str = str(message.author.id) if message else str(interaction.user.id)
         if ch_id not in self.casino_times:
             self.casino_times[ch_id] = 0
         if ts - self.casino_times[ch_id] <= 30:
@@ -448,11 +446,11 @@ class Plugin(BaseModule):
         # user won negative sum, thus ban
         if amount < 0:
             if message:
-                if self.bot.get_user_by_id(message.author.id).is_ban_protected():
+                if self.bot.get_user_by_id(message.author.id).is_ban_protected(self.bot.config.IMMUNE_TO_BAN):
                     await message.channel.send("no enpä bännää ku äijä on suojeltu,,mulkku")
                     return
             else:
-                if self.bot.get_user_by_id(interaction.user.id).is_ban_protected():
+                if self.bot.get_user_by_id(interaction.user.id).is_ban_protected(self.bot.config.IMMUNE_TO_BAN):
                     await interaction.channel.send("no enpä bännää ku äijä on suojeltu,,mulkku")
                     return
 

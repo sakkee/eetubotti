@@ -10,7 +10,6 @@ import discord
 import os
 import json
 from dataclasses import field, dataclass, asdict
-from src.constants import CHANNELS, LEVEL_CHANNELS
 from src.basemodule import BaseModule
 
 ANTTU_IDS: list[int] = [424582449666719745, 295540519616905216, 660316187594457089]
@@ -77,7 +76,7 @@ class Plugin(BaseModule):
     async def on_message(self, message: discord.Message):
         if not self.is_anttuboy(message.author.id):
             return
-        if message.channel.id not in LEVEL_CHANNELS:
+        if message.channel.id not in self.bot.config.LEVEL_CHANNELS:
             return
 
         await self.save_message(message)
@@ -99,14 +98,14 @@ class Plugin(BaseModule):
         saved_messages: list[int] = [x.id for x in self.anttu_messages]
         message_ids: list[int] = [x['id'] for x in messages]
         i: int = 0
-        async for msg in self.bot.server.get_channel(CHANNELS.YLEINEN).history(limit=20000000):
+        async for msg in self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL).history(limit=20000000):
             if not self.is_anttuboy(msg.author.id) and msg.id not in message_ids:
                 continue
             await self.save_message(msg)
             i += 1
             print(i, msg.content)
 
-        async for msg in self.bot.server.get_channel(CHANNELS.YLEINEN2).history(limit=20000000):
+        async for msg in self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL2).history(limit=20000000):
             if not self.is_anttuboy(msg.author.id) and msg.id not in message_ids:
                 continue
 

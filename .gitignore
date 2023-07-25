@@ -2,8 +2,6 @@ data
 .idea
 *.pyc
 venv
-.env
 __pycache__
 .git
-src/constants_*.py
-src/constants.py
+CONFIG

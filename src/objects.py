@@ -1,9 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 import re
 import discord
 import src.functions as functions
-from src.constants import *
 
 
 @dataclass
@@ -44,9 +43,9 @@ class User:
         self.stats.should_update = True
         return self.level == self.refresh_level()
 
-    def is_ban_protected(self) -> bool:
+    def is_ban_protected(self, ban_immune_roles: list[int]) -> bool:
         for role in self.roles:
-            if role in ROLES.immune_to_ban:
+            if role in ban_immune_roles:
                 return True
         return False
 
@@ -222,6 +221,13 @@ class Irc:
     name: str
     link: str
     photo: str
+
+
+class AdminCommands:
+    BAN: int = 1
+    KICK: int = 2
+    MUTE: int = 3
+    TIMEOUT: int = 4
 
 
 @dataclass

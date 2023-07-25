@@ -2,20 +2,20 @@
 
 ## Requirements
 1. A discord bot with [Presence, Server members and Message content intents](https://discord.com/developers/applications/)
-2. A discord server with following roles (see `src/constants.py`):
+2. A discord server with following roles (see `DEFAULT_CONFIG`):
    - Levels (`LEVEL_5`, `LEVEL_10`, `LEVEL_20`, ...)
    - Muted (`MUTED`)
    - Active (`ACTIVE`) (given to most active users)
    - Birthday (`BIRTHDAY`) role (given when user has birthday)
-   - Squad (`SQUAD`) and Homie (`HOMIE`) roles (Squad for friends; Homie for Squad users who post something)
+   - Squad (`SQUAD`) and Homie (`ACTIVE_SQUAD`) roles (Squad for friends; Active Squad for Squad users who post something)
    - Moderator role (`MOD`)
    - Administrator role (`ADMIN`)
-   - Owner role (`WHITENAME`, `JUSU`)
+   - Owner role (`FULL_ADMINISTRATOR`, `OWNER`)
 3. And the following channels:
-   - AFK Voice channel (`AFK_CHANNEL`)
-   - General (`YLEINEN`)
-   - General 2 (`YLEINEN2`)
-   - Bot commands (`BOTTIKOMENNOT`)
+   - AFK Voice channel (`AFK_VOICE_CHANNEL`)
+   - General (`GENERAL`)
+   - General 2 (`GENERAL2`)
+   - Bot commands (`BOTCOMMANDS`)
    - Hidden channel for casino embeds (`CASINO_HIDE_CHANNEL`)
    - Media (`MEDIA`)
 4. The bot added to the discord server. Make sure the bot has the highest role on the server.
@@ -30,10 +30,8 @@
    - `source venv/bin/activate` on linux
 3. Install the required packages:
    - `pip install -r requirements.txt`
-4. Create `.env` file on the project folder root, and add a line
-   - `TOKEN={token}` where {token} is [the discord bot's token](https://discord.com/developers/applications/)
-5. Make necessary changes to `src/constants.py` where server, role and channel IDs are from your server
-6. Run the application by running
+4. Copy `DEFAULT_CONFIG` file to `CONFIG` and make the necessary changes where server, role and channel IDs are from your server, and the `TOKEN` is [the discord bot's token](https://discord.com/developers/applications/)
+5. Run the application by running
    - `python main.py`
 
 ## Development (creating a new module)

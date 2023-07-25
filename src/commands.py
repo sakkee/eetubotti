@@ -5,7 +5,6 @@ from collections.abc import Callable
 import time
 import re
 from src.objects import User
-from src.constants import CHANNELS, ROLES, SERVER_ID
 import discord
 from src.basemodule import BaseModule
 
@@ -26,7 +25,7 @@ class Command:
             bot command channel.
         allow_low_levels_in_bot_channel (bool): The low level users are allowed to use the command in the bot command
             channel.
-        requires_whitename (bool): Requires server highest administration permissions.
+        requires_fulladmin (bool): Requires server highest administration permissions.
         requires_banrole (bool): Requires ban role permission.
 
     Attributes:
@@ -44,7 +43,7 @@ class Command:
     timeouts: dict[User.id, float] = field(default_factory=dict)
     allow_low_levels: bool = False
     allow_low_levels_in_bot_channel = True
-    requires_whitename: bool = False
+    requires_fulladmin: bool = False
     requires_banrole: bool = False
 
     def __post_init__(self):
@@ -67,15 +66,15 @@ class Command:
         if self.disabled:
             return False, msg
         id: User.id = user.id
-        if (message and message.channel.id == CHANNELS.YLEINEN) or \
-                (interaction and interaction.channel_id == CHANNELS.YLEINEN):
+        if (message and message.channel.id == self.manager.bot.config.CHANNEL_GENERAL) or \
+                (interaction and interaction.channel_id == self.manager.bot.config.CHANNEL_GENERAL):
             # yleinen channel
             self.thresholds[id] = 1 if id not in self.thresholds else self.thresholds[id] + 1
             if self.thresholds[id] > self.commands_per_day:
                 if self.thresholds[id] < self.commands_per_day * 2:
                     msg = self.manager.bot.localizations.get('TOO_MANY_COMMANDS').format(
                         self.command_name,
-                        self.manager.bot.client.get_channel(CHANNELS.BOTTIKOMENNOT).mention)
+                        self.manager.bot.client.get_channel(self.manager.bot.config.CHANNEL_BOTCOMMANDS).mention)
                 return False, msg
 
         else:
@@ -85,19 +84,20 @@ class Command:
                 msg = self.manager.bot.localizations.get('TOO_MANY_COMMANDS_1').format(self.command_name)
                 return False, msg
 
-        if ROLES.LEVEL_10 not in user.roles and ROLES.SQUAD not in user.roles and ROLES.WHITENAME not in user.roles:
+        if user.level < 10 and self.manager.bot.config.ROLE_SQUAD not in user.roles and \
+                self.manager.bot.config.ROLE_FULL_ADMINISTRATOR not in user.roles:
             if (not self.allow_low_levels and
-                (message and message.channel.id == CHANNELS.YLEINEN) or
-                (interaction and interaction.channel_id == CHANNELS.YLEINEN)) or \
+                (message and message.channel.id == self.manager.bot.config.CHANNEL_GENERAL) or
+                (interaction and interaction.channel_id == self.manager.bot.config.CHANNEL_GENERAL)) or \
                     not self.allow_low_levels_in_bot_channel:
                 return False, self.manager.bot.localizations.get('TOO_LOW_LEVEL').format(
-                    self.manager.bot.client.get_channel(CHANNELS.BOTTIKOMENNOT).mention)
+                    self.manager.bot.client.get_channel(self.manager.bot.config.CHANNEL_BOTCOMMANDS).mention)
 
-        if self.requires_whitename or self.requires_banrole:
+        if self.requires_fulladmin or self.requires_banrole:
             is_admin: bool = False
             for x in user.roles:
-                if (x not in ROLES.ban_roles and self.requires_banrole) or \
-                        (x != ROLES.WHITENAME and self.requires_whitename):
+                if (x not in self.manager.bot.config.BAN_ROLES and self.requires_banrole) or \
+                        (x != self.manager.bot.config.ROLE_FULL_ADMINISTRATOR and self.requires_fulladmin):
                     continue
                 is_admin = True
                 break
@@ -232,7 +232,7 @@ class CommandManager(BaseModule):
                     description=description,
                     callback=fnc
                 ),
-                guild=discord.Object(SERVER_ID),
+                guild=discord.Object(self.bot.config.SERVER_ID),
                 override=True
             )
             return fnc
@@ -253,8 +253,7 @@ class CommandManager(BaseModule):
         if message:
             await message.delete(delay=8.0)
 
-    @staticmethod
-    async def message(msg: str = '', message: discord.Message = None, interaction: discord.Interaction = None,
+    async def message(self, msg: str = '', message: discord.Message = None, interaction: discord.Interaction = None,
                       file: discord.File | discord.utils.MISSING | None = discord.utils.MISSING,
                       channel_send: bool = False, delete_after: int = 0) -> discord.Message | \
                                                                             discord.Interaction.response:
@@ -272,8 +271,10 @@ class CommandManager(BaseModule):
             A discord.Message or a discord.Interaction.response object which was sent.
         """
         file = discord.utils.MISSING if not file else file
-        delete_after = None if (delete_after == 0 or (message and message.channel.id == CHANNELS.BOTTIKOMENNOT)
-                                or (interaction and interaction.channel.id == CHANNELS.BOTTIKOMENNOT)) else delete_after
+        delete_after = None if (delete_after == 0 or
+                                (message and message.channel.id == self.bot.config.CHANNEL_BOTCOMMANDS)
+                                or (interaction and interaction.channel.id == self.bot.config.CHANNEL_BOTCOMMANDS)) \
+            else delete_after
         if message and delete_after:
             await message.delete(delay=delete_after)
         if not channel_send:
