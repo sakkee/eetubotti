@@ -129,7 +129,7 @@ class CfgParser:
 
     @property
     def CHANNEL_AFK_VOICE_CHANNEL(self) -> int:
-        return self.get_channel('AFK_VOICE_CHANNEÖ')
+        return self.get_channel('AFK_VOICE_CHANNEL')
 
     @property
     def PURGE_CHANNELS(self) -> list[int]:
