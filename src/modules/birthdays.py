@@ -92,6 +92,10 @@ class Plugin(BaseModule):
             await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
             return
         date_now: datetime = datetime.now(tz=gettz(self.bot.config.TIMEZONE))
+        try:
+            birthday = message.content.split()[1] if (message and '.' in message.content.split()[1]) else birthday
+        except:
+            pass
         if target_user == user and birthday and birthday != '0.0.0':
             if user.id in self.birthdays and \
                     date_now.timestamp() - self.birthdays.get(user.id).timestamp < BIRTHDAY_UPDATE_INTERVAL:
