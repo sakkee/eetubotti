@@ -19,3 +19,8 @@ class Localization:
 
     def get(self, key: str) -> str:
         return self.data.get(key)
+
+    def __getattr__(self, item: str) -> str:
+        if item not in self.data:
+            print(f"ERROR! {item} not found in localization!")
+        return self.get(item)

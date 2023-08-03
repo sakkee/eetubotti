@@ -23,7 +23,7 @@ class Plugin(BaseModule):
 
     async def on_ready(self):
         @self.bot.commands.register(command_name='irc', function=self.ircgalleria,
-                                    description=self.bot.localizations.get('IRC_DESCRIPTION'), commands_per_day=5)
+                                    description=self.bot.localizations.IRC_DESCRIPTION, commands_per_day=5)
         @discord.app_commands.checks.has_permissions(
             embed_links=True
         )
@@ -42,7 +42,7 @@ class Plugin(BaseModule):
                           target_user: User | None = None,
                           **kwargs):
         if not target_user:
-            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
             return
         if target_user.irc is not None:
             user_name: str = target_user.irc.name
@@ -64,7 +64,7 @@ class Plugin(BaseModule):
                 target_user.irc = Irc(user_name, link, photo_link)
                 break
 
-        embed = discord.Embed(title=self.bot.localizations.get('IRC_TITLE').format(target_user.name, user_name),
+        embed = discord.Embed(title=self.bot.localizations.IRC_TITLE.format(target_user.name, user_name),
                               url=link)
         embed.set_image(url=photo_link)
 

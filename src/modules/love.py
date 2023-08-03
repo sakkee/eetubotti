@@ -19,7 +19,7 @@ class Plugin(BaseModule):
         self.load_loves()
 
         @self.bot.commands.register(command_name='rakkaus', function=self.love,
-                                    description=self.bot.localizations.get('LOVE_DESCRIPTION'), commands_per_day=6)
+                                    description=self.bot.localizations.LOVE_DESCRIPTION, commands_per_day=6)
         async def love(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['rakkaus'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
@@ -32,22 +32,21 @@ class Plugin(BaseModule):
                    target_user: User | None = None,
                    **kwargs):
         if not target_user or not self.bot.get_user_by_id(target_user.id):
-            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
             return
 
         if user.id not in self.loves and target_user.id == user.id:
-            await self.bot.commands.error(self.bot.localizations.get('NO_LOVE'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.NO_LOVE, message, interaction)
             return
 
         if target_user.id != user.id:
             self.loves[user.id] = self.bot.get_user_by_id(target_user.id)
             self.save_loves()
         if self.loves[user.id].id not in self.loves or self.loves[self.loves[user.id].id].id != user.id:
-            msg = self.bot.localizations.get('WRONG_LOVE').format(f'<@{user.id}>', user.name,
-                                                                  self.loves[user.id].name)
+            msg = self.bot.localizations.WRONG_LOVE.format(f'<@{user.id}>', user.name, self.loves[user.id].name)
         else:
-            msg = self.bot.localizations.get('LOVING').format(f'<@{user.id}>', user.name,
-                                                              f'<@{self.loves[user.id].id}>', self.loves[user.id].name)
+            msg = self.bot.localizations.LOVING.format(f'<@{user.id}>', user.name,
+                                                       f'<@{self.loves[user.id].id}>', self.loves[user.id].name)
         await self.bot.commands.message(msg, message, interaction)
 
     def load_loves(self):

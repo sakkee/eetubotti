@@ -72,7 +72,7 @@ class Command:
             self.thresholds[id] = 1 if id not in self.thresholds else self.thresholds[id] + 1
             if self.thresholds[id] > self.commands_per_day:
                 if self.thresholds[id] < self.commands_per_day * 2:
-                    msg = self.manager.bot.localizations.get('TOO_MANY_COMMANDS').format(
+                    msg = self.manager.bot.localizations.TOO_MANY_COMMANDS.format(
                         self.command_name,
                         self.manager.bot.client.get_channel(self.manager.bot.config.CHANNEL_BOTCOMMANDS).mention)
                 return False, msg
@@ -81,7 +81,7 @@ class Command:
             # other channel than yleinen
             self.thresholds[id] = 1 if id not in self.thresholds else self.thresholds[id] + 1
             if self.thresholds[id] > self.bot_channel_commands:
-                msg = self.manager.bot.localizations.get('TOO_MANY_COMMANDS_1').format(self.command_name)
+                msg = self.manager.bot.localizations.TOO_MANY_COMMANDS_1.format(self.command_name)
                 return False, msg
 
         if user.level < 10 and self.manager.bot.config.ROLE_SQUAD not in user.roles and \
@@ -90,7 +90,7 @@ class Command:
                 (message and message.channel.id == self.manager.bot.config.CHANNEL_GENERAL) or
                 (interaction and interaction.channel_id == self.manager.bot.config.CHANNEL_GENERAL)) or \
                     not self.allow_low_levels_in_bot_channel:
-                return False, self.manager.bot.localizations.get('TOO_LOW_LEVEL').format(
+                return False, self.manager.bot.localizations.TOO_LOW_LEVEL.format(
                     self.manager.bot.client.get_channel(self.manager.bot.config.CHANNEL_BOTCOMMANDS).mention)
 
         if self.requires_fulladmin or self.requires_banrole:
@@ -103,7 +103,7 @@ class Command:
                 break
 
             if not is_admin:
-                return False, self.manager.bot.localizations.get('NOT_OWNER')
+                return False, self.manager.bot.localizations.NOT_OWNER
 
         if self.timeout != 0:
             if id in self.timeouts:
@@ -112,25 +112,25 @@ class Command:
                 else:
                     timeout_time: int = int(self.timeouts[id] + self.timeout - time.time()) + 1
                     if timeout_time < 60:
-                        timescale: str = self.manager.bot.localizations.get('WAIT_SECOND') if timeout_time == 1 else \
-                            self.manager.bot.localizations.get('WAIT_SECONDS')
+                        timescale: str = self.manager.bot.localizations.WAIT_SECOND if timeout_time == 1 else \
+                            self.manager.bot.localizations.WAIT_SECONDS
                     else:
                         timeouts: list[str] = f'{timeout_time / 60}'.split('.')
                         trailing_str: str = ''
                         if len(timeouts) == 2:
                             seconds: int = int(float(f'0.{timeouts[1]}') * 60)
                             if seconds == 1:
-                                trailing_str += f' {seconds} {self.manager.bot.localizations.get("WAIT_SECOND")}'
+                                trailing_str += f' {seconds} {self.manager.bot.localizations.WAIT_SECOND}'
                             elif seconds > 1:
-                                trailing_str += f' {seconds} {self.manager.bot.localizations.get("WAIT_SECONDS")}'
+                                trailing_str += f' {seconds} {self.manager.bot.localizations.WAIT_SECONDS}'
 
-                        timescale = self.manager.bot.localizations.get('WAIT_MINUTE') \
+                        timescale = self.manager.bot.localizations.WAIT_MINUTE \
                             if f'{round(timeout_time / 60, 1):g}' == '1' \
-                            else self.manager.bot.localizations.get('WAIT_MINUTES')
+                            else self.manager.bot.localizations.WAIT_MINUTES
                         timescale += trailing_str
                         timeout_time: str = timeouts[0]
 
-                    return False, self.manager.bot.localizations.get('WAIT').format(timeout_time, timescale)
+                    return False, self.manager.bot.localizations.WAIT.format(timeout_time, timescale)
             self.timeouts[id] = time.time()
         return True, msg
 
@@ -198,7 +198,7 @@ class CommandManager(BaseModule):
 
         Examples:
             @self.bot.commands.register(command_name='rakkaus', function=self.love,
-                                   description=self.bot.localizations.get('LOVE_DESCRIPTION'), commands_per_day=6)
+                                   description=self.bot.localizations.LOVE_DESCRIPTION, commands_per_day=6)
             async def love(interaction: discord.Interaction, käyttäjä: discord.User = None):
                 await self.bot.commands.commands['rakkaus'].execute(
                     user=self.bot.get_user_by_id(interaction.user.id),
@@ -208,7 +208,7 @@ class CommandManager(BaseModule):
 
 
             @self.bot.commands.register(command_name='rank', function=self.rank,
-                                    description=self.bot.localizations.get('RANK_DESCRIPTION'), commands_per_day=15,
+                                    description=self.bot.localizations.RANK_DESCRIPTION, commands_per_day=15,
                                     timeout=5)
             async def rank(interaction: discord.Interaction, käyttäjä: discord.User = None):
                 await self.bot.commands.commands['rank'].execute(
@@ -247,7 +247,7 @@ class CommandManager(BaseModule):
             message (discord.Message | None): Message to which to reply.
             interaction (discord.Interaction | None): Discord interaction to which to reply.
         """
-        msg = self.bot.localizations.get('ON_ERROR') if not msg else msg
+        msg = self.bot.localizations.ON_ERROR if not msg else msg
         await message.reply(msg, delete_after=8.0) if message else \
             await interaction.response.send_message(msg, delete_after=8.0)
         if message:

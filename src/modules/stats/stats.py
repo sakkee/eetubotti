@@ -40,7 +40,7 @@ class Plugin(BaseModule):
 
     async def on_ready(self):
         @self.bot.commands.register(command_name='rank', function=self.rank,
-                                    description=self.bot.localizations.get('RANK_DESCRIPTION'), commands_per_day=15,
+                                    description=self.bot.localizations.RANK_DESCRIPTION, commands_per_day=15,
                                     timeout=5)
         async def rank(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['rank'].execute(
@@ -50,7 +50,7 @@ class Plugin(BaseModule):
             )
 
         @self.bot.commands.register(command_name='streak', function=self.streak,
-                                    description=self.bot.localizations.get('STREAK_DESCRIPTION'), commands_per_day=10,
+                                    description=self.bot.localizations.STREAK_DESCRIPTION, commands_per_day=10,
                                     timeout=5)
         async def streak(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['streak'].execute(
@@ -60,7 +60,7 @@ class Plugin(BaseModule):
             )
 
         @self.bot.commands.register(command_name='top', function=self.top,
-                                    description=self.bot.localizations.get('TOP_DESCRIPTION'), commands_per_day=5,
+                                    description=self.bot.localizations.TOP_DESCRIPTION, commands_per_day=5,
                                     timeout=30)
         async def top(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['top'].execute(
@@ -70,7 +70,7 @@ class Plugin(BaseModule):
             )
 
         @self.bot.commands.register(command_name='grind', function=self.activity,
-                                    description=self.bot.localizations.get('ACTIVITY_DESCRIPTION'), commands_per_day=10,
+                                    description=self.bot.localizations.ACTIVITY_DESCRIPTION, commands_per_day=10,
                                     timeout=5)
         async def grind(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['grind'].execute(
@@ -80,7 +80,7 @@ class Plugin(BaseModule):
             )
 
         @self.bot.commands.register(command_name='grindaajat', function=self.activity_top,
-                                    description=self.bot.localizations.get('ACTIVITY_TOP_DESCRIPTION'),
+                                    description=self.bot.localizations.ACTIVITY_TOP_DESCRIPTION,
                                     commands_per_day=5,
                                     timeout=5)
         async def grinders(interaction: discord.Interaction):
@@ -102,7 +102,7 @@ class Plugin(BaseModule):
                    target_user: User | None = None,
                    **kwargs):
         if not target_user or not self.bot.get_user_by_id(target_user.id) or target_user.bot:
-            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
             return
         point_list: list[tuple[User.id, Stats.points]] = []
         for usr in self.bot.users:
@@ -131,7 +131,7 @@ class Plugin(BaseModule):
                     file=discord.File(fp=image_binary, filename='hengitat_nyt_manuaalisesti.png'), delete_after=15)
         except Exception as e:
             print(e)
-            await self.bot.commands.error(msg=self.bot.localizations.get('ON_ERROR'),
+            await self.bot.commands.error(msg=self.bot.localizations.ON_ERROR,
                                           message=message, interaction=interaction)
 
     async def streak(self, user: User, message: discord.Message | None = None,
@@ -139,10 +139,10 @@ class Plugin(BaseModule):
                      target_user: User | None = None,
                      **kwargs):
         if not target_user or not self.bot.get_user_by_id(target_user.id):
-            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
             return
         streak: int = functions.get_user_streak(target_user, self.bot.daylist)
-        await self.bot.commands.message(self.bot.localizations.get('STREAK_SCORE').format(target_user.name, streak),
+        await self.bot.commands.message(self.bot.localizations.STREAK_SCORE.format(target_user.name, streak),
                                         message, interaction, delete_after=10)
 
     async def top(self, user: User, message: discord.Message | None = None,
@@ -154,13 +154,13 @@ class Plugin(BaseModule):
             point_list.append([usr.id, usr.stats.points])
         sorted_list = sorted(point_list, key=lambda x: -int(x[1]))
         i: int = 0
-        sendable_message: str = self.bot.localizations.get('ACTIVITY_TOP')
+        sendable_message: str = self.bot.localizations.ACTIVITY_TOP
         for k in sorted_list:
             i += 1
             if i > 15:
                 break
             usr = self.bot.get_user_by_id(int(k[0]))
-            sendable_message += self.bot.localizations.get('ACTIVITY_ROW').format(i, usr.name, usr.level)
+            sendable_message += self.bot.localizations.ACTIVITY_ROW.format(i, usr.name, usr.level)
         await self.bot.commands.message(sendable_message, message, interaction, delete_after=25)
 
     async def activity(self, user: User, message: discord.Message | None = None,
@@ -168,13 +168,13 @@ class Plugin(BaseModule):
                        target_user: User | None = None,
                        **kwargs):
         if not target_user or not self.bot.get_user_by_id(target_user.id):
-            await self.bot.commands.error(self.bot.localizations.get('USER_NOT_FOUND'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
             return
         next_threshold: int = functions.get_next_activity_threshold(self.bot.users, self.bot.daylist)
         user_points: int = functions.get_last_14_day_points(target_user, self.bot.daylist)
-        msg = self.bot.localizations.get('ACTIVE_YES').format(target_user.name, user_points, next_threshold) if \
+        msg = self.bot.localizations.ACTIVE_YES.format(target_user.name, user_points, next_threshold) if \
             user_points >= next_threshold else \
-            self.bot.localizations.get('ACTIVE_NO').format(target_user.name, user_points, next_threshold)
+            self.bot.localizations.ACTIVE_NO.format(target_user.name, user_points, next_threshold)
         await self.bot.commands.message(msg, message, interaction, delete_after=12)
 
     async def activity_top(self, user: User, message: discord.Message | None = None,
@@ -182,7 +182,7 @@ class Plugin(BaseModule):
         actives = functions.get_actives(self.bot.users, self.bot.daylist, day_count=14, active_count=20)
         days = self.bot.daylist[::-1][1:14 + 1]
         if not days:
-            await self.bot.commands.error(self.bot.localizations.get('ON_ERROR'), message, interaction)
+            await self.bot.commands.error(self.bot.localizations.ON_ERROR, message, interaction)
             return
         last_day: str = f"{days[0]['day']}.{days[0]['month']}.{days[0]['year']}"
         first_day: str = f"{days[len(days) - 1]['day']}."
@@ -190,12 +190,12 @@ class Plugin(BaseModule):
             first_day += f"{days[len(days) - 1]['month']}."
         if days[len(days) - 1]["year"] != days[0]["year"]:
             first_day += f"{days[len(days) - 1]['year']}"
-        sendable_message: str = self.bot.localizations.get('ACTIVE_ROW_TITLE').format(first_day, last_day)
+        sendable_message: str = self.bot.localizations.ACTIVE_ROW_TITLE.format(first_day, last_day)
         i: int = 1
         for active in actives:
             if i == 16:
-                sendable_message += self.bot.localizations.get('ACTIVE_ROW_NO_TITLE')
-            sendable_message += self.bot.localizations.get('GRIND_ROW').format(i, active[0].name, f'{active[1]:,}')
+                sendable_message += self.bot.localizations.ACTIVE_ROW_NO_TITLE
+            sendable_message += self.bot.localizations.GRIND_ROW.format(i, active[0].name, f'{active[1]:,}')
             i += 1
         await self.bot.commands.message(sendable_message, message, interaction, delete_after=25)
 
@@ -310,8 +310,8 @@ class Plugin(BaseModule):
             if message_points and not user.add_points(message_points) and user.level > 1 and not old:
                 try:
                     await self.refresh_level_roles(user)
-                    await elem.channel.send(self.bot.localizations.get('NEW_LEVEL')
-                                            .format(elem.author.mention, str(user.level)))
+                    await elem.channel.send(self.bot.localizations.NEW_LEVEL.format(elem.author.mention,
+                                                                                    str(user.level)))
                 except Exception:
                     pass
 
@@ -347,7 +347,7 @@ class Plugin(BaseModule):
                 member = await self.bot.server.fetch_member(the_user.id)
                 if self.starting_day.day != self.last_day.day:
                     await elem.channel.send(
-                        self.bot.localizations.get('NEW_STREAK').format(member.mention, str(streak)),
+                        self.bot.localizations.NEW_STREAK.format(member.mention, str(streak)),
                         delete_after=10.0
                     )
             except Exception as e:
@@ -439,13 +439,13 @@ class Plugin(BaseModule):
                 streak = functions.get_user_streak(user, self.bot.daylist)
                 if self.starting_day != self.last_day.day:
                     await self.bot.client.get_channel(self.bot.config.CHANNEL_GENERAL).send(
-                        self.bot.localizations.get('NEW_STREAK').format(member.mention, str(streak)),
+                        self.bot.localizations.NEW_STREAK.format(member.mention, str(streak)),
                         delete_after=10.0
                     )
             user.stats.activity_points_today += activity_points
             if not user.add_points(activity_points):
                 await self.refresh_level_roles(user)
                 await self.bot.client.get_channel(self.bot.config.CHANNEL_GENERAL).send(
-                    self.bot.localizations.get('NEW_LEVEL').format(member.mention, str(user.level)))
+                    self.bot.localizations.NEW_LEVEL.format(member.mention, str(user.level)))
             self.bot.database.add_voicedate(user.voicedate)
             user.voicedate = None
