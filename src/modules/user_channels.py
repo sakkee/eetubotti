@@ -116,7 +116,6 @@ class Plugin(BaseModule):
                 message, interaction)
             return
         if self.bot.config.PREVENT_CHANNEL_CREATION_ROLE in user.roles:
-            print("LÖYTY")
             return
         member: discord.Member | discord.User = self.bot.server.get_member(user.id) or self.bot.client.get_user(user.id)
         channel: TextChannel | None = self.get_channel_by_owner(user)
@@ -141,6 +140,8 @@ class Plugin(BaseModule):
         await channel.discord_channel.set_permissions(member, read_messages=True, send_messages=True,
                                                       manage_messages=True, manage_permissions=True,
                                                       manage_channels=True, manage_threads=True)
+        await channel.discord_channel.set_permissions(self.bot.server.get_role(self.bot.config.ROLE_EVERYONE),
+                                                      view_channel=True, send_messages=True)
         await self.bot.commands.message(
             self.bot.localizations.YOUR_TEXT_CHANNEL.format(channel.discord_channel.mention), message, interaction)
         self.save_channels()
@@ -260,10 +261,13 @@ class Plugin(BaseModule):
             await channel.discord_channel.edit(type=discord.ChannelType.text)
         for permission in after.overwrites:
             for perm in iter(after.overwrites.get(permission)):
-                if perm[0] in ['manage_webhooks', 'mention_everyone', 'send_tts_messages'] and perm[1]:
-                    await channel.discord_channel.set_permissions(permission, manage_webhooks=False,
-                                                                  mention_everyone=False,
-                                                                  send_tts_messages=False)
+                if perm[0] != 'mention_everyone' or not perm[1]:
+                    continue
+                if permission.id == channel.owner.id:
+                    await channel.discord_channel.set_permissions(
+                        permission, mention_everyone=False, send_tts_messages=False, read_messages=True,
+                        send_messages=True, manage_messages=True, manage_permissions=True,
+                        manage_channels=True, manage_threads=True)
                     break
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
