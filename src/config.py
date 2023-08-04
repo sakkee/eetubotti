@@ -174,3 +174,7 @@ class CfgParser:
     @property
     def MIN_CHANNEL_CREATE_LEVEL(self) -> int:
         return int(self.get_config('MISC', 'MIN_CHANNEL_CREATE_LEVEL'))
+
+    @property
+    def DELETE_CHANNEL_AFTER_INACTIVITY_HOURS(self) -> int:
+        return int(self.get_config('MISC', 'DELETE_CHANNEL_AFTER_INACTIVITY_HOURS'))

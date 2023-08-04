@@ -17,6 +17,7 @@ import json
 from dataclasses import dataclass, field
 from src.basemodule import BaseModule
 from src.objects import User
+import time
 from typing import Any
 
 
@@ -28,11 +29,8 @@ class TextChannel:
     banned_users: list[User] = field(default_factory=list)
     id: int = None
     discord_channel: discord.TextChannel | None = None
-    last_check_hour: datetime = None
     pin_message: int = None
-
-    def __post_init__(self):
-        self.last_check_hour = datetime.now(tz=gettz(self.manager.bot.config.TIMEZONE)) - timedelta(days=1)
+    last_message_timestamp: int = 0
 
     @classmethod
     def from_json(cls, manager: Plugin, data: dict) -> TextChannel:
@@ -43,7 +41,8 @@ class TextChannel:
             allowed_users=[manager.bot.get_user_by_id(x) for x in data.get('allowed_users')],
             banned_users=[manager.bot.get_user_by_id(x) for x in data.get('banned_users')],
             discord_channel=manager.bot.server.get_channel(data.get('id')),
-            pin_message=data.get('pin_message')
+            pin_message=data.get('pin_message'),
+            last_message_timestamp=data.get('last_message_timestamp')
         )
 
     def asdict(self) -> dict[str, Any]:
@@ -52,7 +51,8 @@ class TextChannel:
             'allowed_users': [x.id for x in self.allowed_users],
             'banned_users': [x.id for x in self.banned_users],
             'id': self.id,
-            'pin_message': self.pin_message
+            'pin_message': self.pin_message,
+            'last_message_timestamp': self.last_message_timestamp
         }
 
 
@@ -60,6 +60,10 @@ class TextChannel:
 class Plugin(BaseModule):
     category: discord.CategoryChannel = None
     text_channels: list[TextChannel] = field(default_factory=list)
+    last_check_hour: datetime = None
+
+    def __post_init__(self):
+        self.last_check_hour = datetime.now(tz=gettz(self.bot.config.TIMEZONE)) - timedelta(days=1)
 
     async def on_ready(self):
         self.load_channels()
@@ -138,8 +142,7 @@ class Plugin(BaseModule):
                                                       manage_messages=True, manage_permissions=True,
                                                       manage_channels=True, manage_threads=True)
         await self.bot.commands.message(
-            self.bot.localizations.YOUR_TEXT_CHANNEL.format(channel.discord_channel.mention),
-            message, interaction, delete_after=60)
+            self.bot.localizations.YOUR_TEXT_CHANNEL.format(channel.discord_channel.mention), message, interaction)
         self.save_channels()
 
     def load_channels(self):
@@ -215,14 +218,19 @@ class Plugin(BaseModule):
                 await channel.discord_channel.set_permissions(member, view_channel=False, send_messages=False)
 
     async def on_message(self, message: discord.Message):
-        new_check: bool = False
-        for channel in self.text_channels:
-            if channel.last_check_hour.hour != message.created_at.hour:
-                channel.last_check_hour = message.created_at
-                new_check = True
-        if not new_check:
+        text_channel: TextChannel | None = self.get_channel_by_id(message.channel.id)
+        if text_channel:
+            text_channel.last_message_timestamp = message.created_at.timestamp()
+
+        if self.last_check_hour.hour == message.created_at.hour:
             return
+        self.last_check_hour = message.created_at
+
         for channel in self.text_channels:
+            if time.time() - channel.last_message_timestamp >= \
+                    self.bot.config.DELETE_CHANNEL_AFTER_INACTIVITY_HOURS * 3600:
+                await channel.discord_channel.delete(reason='Deleted due to inactivity')
+                continue
             try:
                 while len(await channel.discord_channel.purge(check=self.is_to_be_deleted, oldest_first=True)) > 0:
                     pass
@@ -248,6 +256,15 @@ class Plugin(BaseModule):
             await channel.discord_channel.edit(name=real_name)
         if not channel.discord_channel.is_nsfw():
             await channel.discord_channel.edit(nsfw=True)
+        if after.type != discord.ChannelType.text:
+            await channel.discord_channel.edit(type=discord.ChannelType.text)
+        for permission in after.overwrites:
+            for perm in iter(after.overwrites.get(permission)):
+                if perm[0] in ['manage_webhooks', 'mention_everyone', 'send_tts_messages'] and perm[1]:
+                    await channel.discord_channel.set_permissions(permission, manage_webhooks=False,
+                                                                  mention_everyone=False,
+                                                                  send_tts_messages=False)
+                    break
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         if self.bot.config.PREVENT_CHANNEL_CREATION_ROLE in [x.id for x in after.roles] and \
