@@ -129,7 +129,7 @@ class Plugin(BaseModule):
                                                                                          nsfw=True)
             channel.id = new_channel.id
             channel.discord_channel = new_channel
-            commands: str = '> **/kanava**: luo oma kanava (jos tämä poistetaan)\n'
+            commands: str = '> **!kanava**: luo oma kanava (jos tämä poistetaan) tai korjaa permissionit\n'
             commands += '> **🔴**: bännää käyttäjä tältä kanavalta\n'
             commands += '> **!kanava_unban** {käyttäjä}: päästää käyttäjän kanavalle taas'
             first_post: discord.Message = await new_channel.send(
@@ -140,7 +140,7 @@ class Plugin(BaseModule):
         await channel.discord_channel.set_permissions(member, read_messages=True, send_messages=True,
                                                       manage_messages=True, manage_permissions=True,
                                                       manage_channels=True, manage_threads=True)
-        await channel.discord_channel.set_permissions(self.bot.server.get_role(self.bot.config.ROLE_EVERYONE),
+        await channel.discord_channel.set_permissions(self.bot.server.get_role(self.bot.config.ROLE_LEVEL_20),
                                                       view_channel=True, send_messages=True)
         await self.bot.commands.message(
             self.bot.localizations.YOUR_TEXT_CHANNEL.format(channel.discord_channel.mention), message, interaction)
