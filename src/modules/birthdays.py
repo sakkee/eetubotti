@@ -128,7 +128,7 @@ class Plugin(BaseModule):
                 print(e)
                 await self.bot.commands.error(self.bot.localizations.BIRTHDAY_ERROR, message, interaction)
                 return
-        if target_user.id not in self.birthdays:
+        if target_user.id not in self.birthdays or self.birthdays[target_user.id].year == 0:
             msg = self.bot.localizations.BIRTHDAY_NOT_YET_SET.format(target_user.name)
             await self.bot.commands.error(msg, message, interaction)
             return

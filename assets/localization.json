@@ -104,5 +104,14 @@
     "LOW_BALANCES_DESCRIPTION": "Näyttää servun 10 pahinta maksuhäiriö tyyppiä",
     "ANTTU_BAN_ANNOUNCE": "{0} saat bännit 10 sekunnin päästä koska anttubott pyytää",
     "BAN_ANNOUNCE_5S": "5 sekuntia niin päästää tästä jolophista {0}",
-    "ANTTU_BAN_REASON": "bännit koska anttubott pyysi"
+    "ANTTU_BAN_REASON": "bännit koska anttubott pyysi",
+    "CREATE_CHANNEL_DESCRIPTION": "Luo oma uusi tekstikanava",
+    "TOO_LOW_LEVEL_CHANNEL_CREATE": "Olet liian pieni level tähän komentoon. Vaaditaan {0} level",
+    "NO_USER_CATEGORY_EXISTS": "ERROR! en löytänyt servulta käyttäjien omien kanavien kategoriaa. luoppas jolopphi sellainen tai päivitä botin config",
+    "YOUR_TEXT_CHANNEL": "Sinun tekstikanavasi: {0}",
+    "NEW_CHANNEL_TEMPLATE": "Tämä on {0}:n oma tekstikanava. Kanava tyhjenee tietyn väliajoin välein, riippuen omistajan levelistä. Kanavalla on noudatettava Discordin sääntöjä ja **omistaja on siitä vastuussa**.\n\nOmistaja sekä servun adminit voivat vaihtaa kanavan tietoja ja oikeuksia. Kanavan on oltava NSFW ja kanavan nimen sama kuin luojan nimi.\n\n**Komennot:**\n{1}",
+    "UNBAN_ON_CHANNEL": "poistaa kohteen bannin omalta tekstikanavalta. käyttö: `!kanava_unban {käyttäjä}",
+    "NOT_A_CHANNEL_OWNER": "sullapa ei ollu omaa kanavaa. kokeileppas `!kanava` komentoa",
+    "UNBANNED_FROM_CHANNEL": "unbännäsin just **{0}** käyttäjän **{1}**:n tekstikanavalta",
+    "BANNED_FROM_CHANNEL": "bännäsin just **{0}** tältä kanavalta :D"
 }

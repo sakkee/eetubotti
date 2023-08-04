@@ -190,6 +190,8 @@ class Plugin(BaseModule):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.emoji.name != '🔴' or not functions.check_if_can_ban(payload.member, self.bot.config.BAN_ROLES):
             return
+        if self.bot.client.get_channel(payload.channel_id).category.id == self.bot.config.USER_CHANNEL_CATEGORY:
+            return
         message: discord.Message = await self.bot.client.get_channel(payload.channel_id).fetch_message(
             payload.message_id)
         message_content: str = message.content[:256] if message.content else ""
