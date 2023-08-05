@@ -30,7 +30,6 @@ class TextChannel:
     id: int = None
     discord_channel: discord.TextChannel | None = None
     pin_message: int = None
-    last_message_timestamp: int = 0
 
     @classmethod
     def from_json(cls, manager: Plugin, data: dict) -> TextChannel:
@@ -41,8 +40,7 @@ class TextChannel:
             allowed_users=[manager.bot.get_user_by_id(x) for x in data.get('allowed_users')],
             banned_users=[manager.bot.get_user_by_id(x) for x in data.get('banned_users')],
             discord_channel=manager.bot.server.get_channel(data.get('id')),
-            pin_message=data.get('pin_message'),
-            last_message_timestamp=data.get('last_message_timestamp')
+            pin_message=data.get('pin_message')
         )
 
     def asdict(self) -> dict[str, Any]:
@@ -51,8 +49,7 @@ class TextChannel:
             'allowed_users': [x.id for x in self.allowed_users],
             'banned_users': [x.id for x in self.banned_users],
             'id': self.id,
-            'pin_message': self.pin_message,
-            'last_message_timestamp': self.last_message_timestamp
+            'pin_message': self.pin_message
         }
 
 
@@ -228,7 +225,7 @@ class Plugin(BaseModule):
         self.last_check_hour = message.created_at
 
         for channel in self.text_channels:
-            if time.time() - channel.last_message_timestamp >= \
+            if time.time() - channel.owner.stats.last_post_time >= \
                     self.bot.config.DELETE_CHANNEL_AFTER_INACTIVITY_HOURS * 3600:
                 await channel.discord_channel.delete(reason='Deleted due to inactivity')
                 continue
