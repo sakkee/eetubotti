@@ -12,7 +12,8 @@ from . import (
     get,
     empty_channels,
     moderation,
-    anttubott
+    anttubott,
+    user_channels
 )
 from src.basemodule import BaseModule
 
@@ -25,5 +26,6 @@ module_list: list[Type[BaseModule]] = [
     get.Plugin,
     empty_channels.Plugin,
     moderation.Plugin,
-    anttubott.Plugin
+    anttubott.Plugin,
+    user_channels.Plugin
 ]

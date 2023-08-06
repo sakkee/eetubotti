@@ -104,8 +104,7 @@ class Bot(EventHandler):
         to avoid the need for rebooting the bot. Initialized in src/discord_events.py.
         """
         if len(module_name) < 2:
-            await self.commands.error(self.localizations.get('MODULE_NOT_FOUND').format(module_name),
-                                      message, interaction)
+            await self.commands.error(self.localizations.MODULE_NOT_FOUND.format(module_name), message, interaction)
             return
 
         found_module = None
@@ -114,16 +113,16 @@ class Bot(EventHandler):
                 found_module = _module
                 break
         if not found_module:
-            await self.commands.error(self.localizations.get('MODULE_NOT_FOUND').format(module_name),
-                                      message, interaction)
+            await self.commands.error(self.localizations.MODULE_NOT_FOUND.format(module_name), message, interaction)
             return
         self.modules[:] = [x for x in self.modules if x != found_module]
         i = importlib.import_module(found_module.__class__.__module__)
         plugin = importlib.reload(i)
         self.localizations.load()
+        self.config.load_config()
         self.modules.append(plugin.Plugin(self))
         await self.modules[-1].on_ready()
-        await self.commands.message(self.localizations.get('MODULE_RELOADED').format(found_module.__class__.__module__),
+        await self.commands.message(self.localizations.MODULE_RELOADED.format(found_module.__class__.__module__),
                                     message, interaction)
 
     async def sync_users(self):
@@ -131,7 +130,7 @@ class Bot(EventHandler):
         async for member in self.server.fetch_members(limit=None):
             await self.add_if_user_not_exist(member)
         print('Users synced!')
-        await self.client.get_channel(self.config.CHANNEL_GENERAL).send(self.localizations.get('ON_BOOT'))
+        await self.client.get_channel(self.config.CHANNEL_GENERAL).send(self.localizations.ON_BOOT)
 
     async def add_if_user_not_exist(self, member: discord.Member | discord.User, is_message: bool = False):
         """Add User if it doesn't already exist.

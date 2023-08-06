@@ -64,6 +64,10 @@ class CfgParser:
         return level_roles
 
     @property
+    def ROLE_LEVEL_20(self) -> int:
+        return self.get_role('LEVEL_20')
+
+    @property
     def ROLE_MUTED(self) -> int:
         return self.get_role('MUTED')
 
@@ -100,6 +104,14 @@ class CfgParser:
         return self.get_role('MOD')
 
     @property
+    def ROLE_EVERYONE(self) -> int:
+        return self.get_role('EVERYONE')
+
+    @property
+    def PREVENT_CHANNEL_CREATION_ROLE(self) -> int:
+        return self.get_role('PREVENT_CHANNEL_CREATION_ROLE')
+
+    @property
     def BAN_ROLES(self) -> list[int]:
         return [int(self.get_role(x)) for x in self.get_config('ROLES', 'BAN_ROLES', [])]
 
@@ -132,6 +144,10 @@ class CfgParser:
         return self.get_channel('AFK_VOICE_CHANNEL')
 
     @property
+    def USER_CHANNEL_CATEGORY(self) -> int:
+        return self.get_channel('USER_CHANNEL_CATEGORY')
+
+    @property
     def PURGE_CHANNELS(self) -> list[int]:
         return [self.get_channel(x) for x in self.get_config('CHANNELS', 'PURGE_CHANNELS', [])]
 
@@ -162,3 +178,11 @@ class CfgParser:
     @property
     def TOKEN(self) -> str:
         return self.get_config('MISC', 'TOKEN')
+
+    @property
+    def MIN_CHANNEL_CREATE_LEVEL(self) -> int:
+        return int(self.get_config('MISC', 'MIN_CHANNEL_CREATE_LEVEL'))
+
+    @property
+    def DELETE_CHANNEL_AFTER_INACTIVITY_HOURS(self) -> int:
+        return int(self.get_config('MISC', 'DELETE_CHANNEL_AFTER_INACTIVITY_HOURS'))

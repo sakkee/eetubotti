@@ -341,7 +341,7 @@ class EventDispatcher:
 
 @dataclass
 class EventHandler:
-    """Event Dispatcher Class.
+    """Event Handler Class.
 
     bot.Bot and the BaseModule in modules.module use this as their base class.
 

@@ -121,13 +121,12 @@ class Plugin(BaseModule):
             with open('data/blacklist_list.json', 'w', encoding='utf-8') as f:
                 json.dump([x.blacklisted_strings for x in self.blacklist_list], f, ensure_ascii=False, indent=4)
         await message.delete()
-        await message.channel.send(self.bot.localizations.get('BLACKLISTED').format(message.author.mention),
-                                   delete_after=10.0)
+        await message.channel.send(self.bot.localizations.BLACKLISTED.format(message.author.mention), delete_after=10.0)
         if not adding:
             return
         with open('data/blacklist_log.json') as f:
             added = json.load(f)
-        added.append(self.bot.localizations.get('BLACKLISTED_LOG').format(payload.member.name, added_text))
+        added.append(self.bot.localizations.BLACKLISTED_LOG.format(payload.member.name, added_text))
         with open('data/blacklist_log.json', 'w', encoding='utf-8') as f:
             json.dump(added, f, ensure_ascii=True, indent=4)
 
@@ -160,11 +159,10 @@ class Plugin(BaseModule):
                 userlog: list[str] = json.load(f)
         except FileNotFoundError:
             userlog: list[str] = []
-        userlog.append(self.bot.localizations.get('BLACKLISTED_POST').format(message.author.name, blacklisted_content))
+        userlog.append(self.bot.localizations.BLACKLISTED_POST.format(message.author.name, blacklisted_content))
         with open('data/blacklist_userlog.log', 'w', encoding='utf-8') as f:
             json.dump(userlog, f, ensure_ascii=False, indent=4)
-        await message.channel.send(self.bot.localizations.get('BLACKLISTED').format(message.author.mention),
-                                   delete_after=8.0)
+        await message.channel.send(self.bot.localizations.BLACKLISTED.format(message.author.mention), delete_after=8.0)
 
         user: User = self.bot.get_user_by_id(message.author.id)
         if not user or not user.is_in_guild or user.level >= 5:
@@ -172,22 +170,22 @@ class Plugin(BaseModule):
 
         if user.id in self.kicklist and self.kicklist[user.id] + 600 > time.time():
             try:
-                await message.author.send(self.bot.localizations.get('BLACKLISTED_BAN_DM').format(blacklisted_content))
+                await message.author.send(self.bot.localizations.BLACKLISTED_BAN_DM.format(blacklisted_content))
             except:
                 pass
             await message.guild.ban(message.author,
-                                    reason=self.bot.localizations.get('BLACKLISTED_BAN_LOG')
+                                    reason=self.bot.localizations.BLACKLISTED_BAN_LOG
                                     .format(blacklisted_content))
-            await message.channel.send(self.bot.localizations.get('BLACKLISTED_BAN_ANNOUNCE')
+            await message.channel.send(self.bot.localizations.BLACKLISTED_BAN_ANNOUNCE
                                        .format(message.author.mention))
             return
         elif user.id in self.kicklist:
             del self.kicklist[user.id]
         try:
-            await message.author.send(self.bot.localizations.get('BLACKLISTED_KICK_DM').format(blacklisted_content))
+            await message.author.send(self.bot.localizations.BLACKLISTED_KICK_DM.format(blacklisted_content))
         except:
             pass
-        await message.author.kick(reason=self.bot.localizations.get('BLACKLISTED_KICK_LOG').format(blacklisted_content))
+        await message.author.kick(reason=self.bot.localizations.BLACKLISTED_KICK_LOG.format(blacklisted_content))
         self.kicklist[user.id] = time.time()
 
     def is_being_spammed(self, date: datetime) -> bool:
@@ -210,11 +208,10 @@ class Plugin(BaseModule):
                 userlog: list[str] = json.load(f)
         except FileNotFoundError:
             userlog: list[str] = []
-        userlog.append(self.bot.localizations.get('BLACKLISTED_POST').format(message.author.name, blacklisted_content))
+        userlog.append(self.bot.localizations.BLACKLISTED_POST.format(message.author.name, blacklisted_content))
         with open('data/blacklist_userlog.log', 'w', encoding='utf-8') as f:
             json.dump(userlog, f, ensure_ascii=False, indent=4)
-        await message.channel.send(self.bot.localizations.get('BLACKLISTED').format(message.author.mention),
-                                   delete_after=8.0)
+        await message.channel.send(self.bot.localizations.BLACKLISTED.format(message.author.mention), delete_after=8.0)
 
         user: User = self.bot.get_user_by_id(message.author.id)
         if not user or not user.is_in_guild or user.level >= 5:
@@ -222,20 +219,18 @@ class Plugin(BaseModule):
 
         if user.id in self.kicklist and self.kicklist[user.id] + 600 > time.time():
             try:
-                await message.author.send(self.bot.localizations.get('BLACKLISTED_BAN_DM').format(blacklisted_content))
+                await message.author.send(self.bot.localizations.BLACKLISTED_BAN_DM.format(blacklisted_content))
             except:
                 pass
             await message.guild.ban(message.author,
-                                    reason=self.bot.localizations.get('BLACKLISTED_BAN_LOG')
-                                    .format(blacklisted_content))
-            await message.channel.send(self.bot.localizations.get('BLACKLISTED_BAN_ANNOUNCE')
-                                       .format(message.author.mention))
+                                    reason=self.bot.localizations.BLACKLISTED_BAN_LOG.format(blacklisted_content))
+            await message.channel.send(self.bot.localizations.BLACKLISTED_BAN_ANNOUNCE.format(message.author.mention))
             return
         elif user.id in self.kicklist:
             del self.kicklist[user.id]
         try:
-            await message.author.send(self.bot.localizations.get('BLACKLISTED_KICK_DM').format(blacklisted_content))
+            await message.author.send(self.bot.localizations.BLACKLISTED_KICK_DM.format(blacklisted_content))
         except:
             pass
-        await message.author.kick(reason=self.bot.localizations.get('BLACKLISTED_KICK_LOG').format(blacklisted_content))
+        await message.author.kick(reason=self.bot.localizations.BLACKLISTED_KICK_LOG.format(blacklisted_content))
         self.kicklist[user.id] = time.time()
