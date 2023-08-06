@@ -44,6 +44,8 @@ class User:
         return self.level == self.refresh_level()
 
     def is_ban_protected(self, ban_immune_roles: list[int]) -> bool:
+        if self.bot:
+            return True
         for role in self.roles:
             if role in ban_immune_roles:
                 return True
