@@ -11,6 +11,7 @@ import discord
 import os
 import json
 from dataclasses import field, dataclass, asdict
+import re
 from src.basemodule import BaseModule
 
 ANTTU_IDS: list[int] = [424582449666719745, 295540519616905216, 660316187594457089]
@@ -100,8 +101,10 @@ class Plugin(BaseModule):
         if ban_ignore_found:
             return
 
-        target_discord_user: discord.User = message.mentions[0]
-        target_user = self.bot.get_user_by_id(target_discord_user.id)
+        mentioned: re.Match | None = re.search(r'<@.*>', message.content)
+        if not mentioned:
+            return
+        target_user = self.bot.commands.get_target_user(mentioned.group(0))
         if not target_user:
             return
 
