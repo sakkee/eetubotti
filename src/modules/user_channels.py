@@ -122,8 +122,7 @@ class Plugin(BaseModule):
         if not channel.id:
             # channel doesn't exist
             new_channel: discord.TextChannel = await self.bot.server.create_text_channel(user.name,
-                                                                                         category=self.category,
-                                                                                         nsfw=True)
+                                                                                         category=self.category)
             channel.id = new_channel.id
             channel.discord_channel = new_channel
             commands: str = '> **!kanava**: luo oma kanava (jos tämä poistetaan) tai korjaa permissionit\n'
@@ -252,8 +251,8 @@ class Plugin(BaseModule):
         if after.name != real_name:
             print(f"ERROR! {after.name} != {real_name}")
             await channel.discord_channel.edit(name=real_name)
-        if not channel.discord_channel.is_nsfw():
-            await channel.discord_channel.edit(nsfw=True)
+        # if not channel.discord_channel.is_nsfw():
+        #     await channel.discord_channel.edit(nsfw=True)
         if after.type != discord.ChannelType.text:
             await channel.discord_channel.edit(type=discord.ChannelType.text)
         for permission in after.overwrites:

@@ -404,7 +404,6 @@ class Plugin(BaseModule):
                                                           format(self.bot.client.get_user(user.id).mention,
                                                                  '{:,}'.format(amount)),
                                                           message, interaction, channel_send=True)
-                    await asyncio.sleep(2)
                 elif len(wins) > 0 > amount:
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
@@ -413,7 +412,7 @@ class Plugin(BaseModule):
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                 self.casino_times[ch_id] = 0
-                await asyncio.sleep(4)
+                await asyncio.sleep(5)
             if i < 2:
                 await asyncio.sleep(4)
             else:

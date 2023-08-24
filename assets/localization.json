@@ -113,5 +113,9 @@
     "UNBAN_ON_CHANNEL": "poistaa kohteen bannin omalta tekstikanavalta. käyttö: `!kanava_unban {käyttäjä}",
     "NOT_A_CHANNEL_OWNER": "sullapa ei ollu omaa kanavaa. kokeileppas `!kanava` komentoa",
     "UNBANNED_FROM_CHANNEL": "unbännäsin just **{0}** käyttäjän **{1}**:n tekstikanavalta",
-    "BANNED_FROM_CHANNEL": "bännäsin just **{0}** tältä kanavalta :D"
+    "BANNED_FROM_CHANNEL": "bännäsin just **{0}** tältä kanavalta :D",
+    "BAUHAUS_NOT_FOUND": "Virhe tapahtui, en löytänyt monelta Bauhaus menee kiinni",
+    "BAUHAUS_CLOSED_TODAY": "Bauhaus ei ole tänään ollenkaan auki :(",
+    "BAUHAUS_CLOSING_HOUR": "Bauhaus menee tänään kiinni klo {0}:00",
+    "BAUHAUS_CLOSED_ALREADY": "Bauhaus meni tänään kiinni jo klo {0}:00 :( rip"
 }
