@@ -128,17 +128,16 @@ class Plugin(BaseModule):
             target_user.profile_filename = await self.bot.get_user_file(self.bot.server.get_member(target_user.id))
             profile_filepath = target_user.profile_filename
         fp = rank_card.Card.create_card(xp_now, xp_next, rank, level, target_user.name, identifier, profile_filepath)
-        try:
-            with BytesIO() as image_binary:
-                fp.save(image_binary, 'PNG')
-                image_binary.seek(0)
-                await self.bot.commands.message(
-                    message=message, interaction=interaction,
-                    file=discord.File(fp=image_binary, filename='hengitat_nyt_manuaalisesti.png'), delete_after=15)
-        except Exception as e:
-            print(e)
-            await self.bot.commands.error(msg=self.bot.localizations.ON_ERROR,
-                                          message=message, interaction=interaction)
+        # try:
+        with BytesIO() as image_binary:
+            fp.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            await self.bot.commands.message(
+                message=message, interaction=interaction,
+                file=discord.File(fp=image_binary, filename='hengitat_nyt_manuaalisesti.png'), delete_after=15)
+        # except Exception as e:
+        #    await self.bot.commands.error(msg=self.bot.localizations.ON_ERROR,
+        #                                   message=message, interaction=interaction)
 
     async def streak(self, user: User, message: discord.Message | None = None,
                      interaction: discord.Interaction | None = None,
@@ -314,12 +313,10 @@ class Plugin(BaseModule):
             user.stats.should_update = True
 
             if message_points and not user.add_points(message_points) and user.level > 1 and not old:
-                try:
-                    await self.refresh_level_roles(user)
-                    await elem.channel.send(self.bot.localizations.NEW_LEVEL.format(elem.author.mention,
-                                                                                    str(user.level)))
-                except Exception:
-                    pass
+                await self.refresh_level_roles(user)
+                await self.bot.commands.message(
+                    msg=self.bot.localizations.NEW_LEVEL.format(elem.author.mention, str(user.level)),
+                    message=elem, channel_send=True)
 
         if old:
             self.old_cache.append(message.content)
@@ -400,10 +397,13 @@ class Plugin(BaseModule):
         member = self.bot.server.get_member(user.id)
         if member is None or member.bot or member.id in self.bot.config.IGNORE_LEVEL_USERS:  # wasabi exception
             return
-        for role in removable_roles:
-            await member.remove_roles(role)
-        for role in addable_roles:
-            await member.add_roles(role)
+        try:
+            for role in removable_roles:
+                await member.remove_roles(role)
+            for role in addable_roles:
+                await member.add_roles(role)
+        except discord.Forbidden:
+            print(f"ERROR! Bot doesn't have permissions to change {user.name}'s roles")
 
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
                                     after: discord.VoiceState):

@@ -424,7 +424,7 @@ class Plugin(BaseModule):
         try:
             if message:
                 await message.delete()
-        except:
+        except (discord.NotFound, discord.Forbidden):
             pass
         finally:
             await casino_post.delete()
