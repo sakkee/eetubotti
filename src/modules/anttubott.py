@@ -112,6 +112,8 @@ class Plugin(BaseModule):
             await message.reply(self.bot.localizations.BAN_CANT_BAN.format(target_user.name))
             return
 
+        target_discord_user: discord.User = self.bot.client.get_user(target_user.id)
+
         await message.channel.send(self.bot.localizations.ANTTU_BAN_ANNOUNCE.format(target_discord_user.mention))
         await asyncio.sleep(5)
         await message.channel.send(self.bot.localizations.BAN_ANNOUNCE_5S.format(target_discord_user.mention))
