@@ -10,6 +10,9 @@ Commands:
 """
 
 from __future__ import annotations
+
+import os.path
+
 import discord
 import asyncio
 from io import BytesIO
@@ -120,7 +123,10 @@ class Plugin(BaseModule):
         rank: int = i
         level: int = target_user.level
         identifier: User.identifier = target_user.identifier
-        profile_filepath: User.identifier = target_user.profile_filename
+        profile_filepath: User.profile_filename = target_user.profile_filename
+        if not os.path.isfile(profile_filepath):
+            target_user.profile_filename = await self.bot.get_user_file(self.bot.server.get_member(target_user.id))
+            profile_filepath = target_user.profile_filename
         fp = rank_card.Card.create_card(xp_now, xp_next, rank, level, target_user.name, identifier, profile_filepath)
         try:
             with BytesIO() as image_binary:
