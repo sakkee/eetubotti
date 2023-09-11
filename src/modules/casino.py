@@ -36,7 +36,7 @@ def get_data_filename(name: str, filetype: str = "png") -> str:
 class Constants:
     ADMIN_COOLDOWN: int = 5 * 60
     USER_COOLDOWN: int = 60 * 60
-    MAX_AMOUNT: int = 100000
+    MAX_AMOUNT: int = 1000000
     MIN_AMOUNT: int = 1
     TILESIZE: tuple[int, int] = (39, 51)
     BG_SIZE: tuple[int, int] = (365, 301)
