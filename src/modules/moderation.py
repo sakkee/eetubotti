@@ -88,23 +88,25 @@ class Plugin(BaseModule):
             return
         try:
             await member.send(self.bot.localizations.BAN_DM.format(hours, reason))
-        except:
+        except discord.Forbidden:
             pass
 
         try:
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
-            await self.bot.commands.message(self.bot.localizations.BAN_CHANNEL_ANNOUNCE
-                                            .format(member.name, hours, reason, user.name),
-                                            message, interaction, channel_send=True)
-            if interaction:
-                await interaction.response.send_message('meni bänneille')
             banned_user: discord.User = await self.bot.client.fetch_user(target_user.id)
             if banned_user in self.ban_list:
                 del self.ban_list[banned_user]
             self.ban_list[banned_user] = time.time() + hours * 60 * 60
             self.save_bans()
 
-        except:
+            await self.bot.commands.message(self.bot.localizations.BAN_CHANNEL_ANNOUNCE
+                                            .format(member.name, hours, reason, user.name),
+                                            message, interaction, channel_send=True)
+            if interaction:
+                await interaction.response.send_message('meni bänneille')
+
+        except discord.Forbidden:
+            print(f"Error! Don't have permissions to ban user {member.name}")
             await self.bot.commands.error(self.bot.localizations.ON_ERROR, message, interaction)
 
     def save_bans(self):
@@ -212,7 +214,8 @@ class Plugin(BaseModule):
             self.ban_list[banned_user] = time.time() + hours * 60 * 60
             self.save_bans()
 
-        except:
+        except discord.Forbidden:
+            print(f"Error! Can't ban user {member.name}")
             await self.bot.commands.error(self.bot.localizations.ON_ERROR, message, None)
 
     async def on_message(self, message: discord.Message):
@@ -236,7 +239,7 @@ class Plugin(BaseModule):
             if not len(message.embeds) or len(message.embeds[0].description) <= 20 or len(
                     message.embeds[0].description.split("\n")) <= 30:
                 return
-        except:
+        except IndexError:
             return
         if not self.bot.get_user_by_id(message.author.id):
             return
@@ -256,7 +259,8 @@ class Plugin(BaseModule):
             try:
                 await user.send(self.bot.localizations.BAN_DM
                                 .format(hours, self.bot.localizations.BAN_DEFAULT_REASON))
-            except:
+            except discord.Forbidden:
+                print(f"Error! Can't send DM to user {user.name}")
                 pass
             return
         self.ban_list[user] = time.time() + DEFAULT_BAN_LENGTH * 60 * 60

@@ -94,7 +94,7 @@ class Plugin(BaseModule):
         date_now: datetime = datetime.now(tz=gettz(self.bot.config.TIMEZONE))
         try:
             birthday = message.content.split()[1] if (message and '.' in message.content.split()[1]) else birthday
-        except:
+        except IndexError:
             pass
         if target_user == user and birthday and birthday != '0.0.0':
             if user.id in self.birthdays and \

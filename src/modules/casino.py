@@ -36,7 +36,7 @@ def get_data_filename(name: str, filetype: str = "png") -> str:
 class Constants:
     ADMIN_COOLDOWN: int = 5 * 60
     USER_COOLDOWN: int = 60 * 60
-    MAX_AMOUNT: int = 100000
+    MAX_AMOUNT: int = 1000000
     MIN_AMOUNT: int = 1
     TILESIZE: tuple[int, int] = (39, 51)
     BG_SIZE: tuple[int, int] = (365, 301)
@@ -369,7 +369,7 @@ class Plugin(BaseModule):
         embed: discord.Embed = discord.Embed(
             title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
             description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-            .format(play_amount, self.get_user_balance(user) + play_amount)
+            .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount))
         )
         embed.set_image(url=self.unpulled_casino_url)
         casino_post: discord.Message = await message.channel.send(embed=embed) if message else \
@@ -380,7 +380,7 @@ class Plugin(BaseModule):
             urls.append(post.attachments[0].url)
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
                                   description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-                                  .format(play_amount, self.get_user_balance(user) + play_amount))
+                                  .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount)))
             embed.set_image(url=post.attachments[0].url)
             await self.casino_hide.send(embed=embed, delete_after=1.0)
 
@@ -389,8 +389,8 @@ class Plugin(BaseModule):
         for url in urls[1:]:
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
                                   description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-                                  .format(play_amount, self.get_user_balance(user) + play_amount if i < len(files) - 1 \
-                                      else self.get_user_balance(user) + amount))
+                                  .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount if i < len(files) - 1 \
+                                      else self.get_user_balance(user) + amount)))
             embed.set_image(url=url)
             await casino_post.edit(embed=embed)
             i += 1
@@ -424,7 +424,7 @@ class Plugin(BaseModule):
         try:
             if message:
                 await message.delete()
-        except:
+        except (discord.NotFound, discord.Forbidden):
             pass
         finally:
             await casino_post.delete()

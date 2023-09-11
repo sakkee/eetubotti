@@ -171,8 +171,8 @@ class Plugin(BaseModule):
         if user.id in self.kicklist and self.kicklist[user.id] + 600 > time.time():
             try:
                 await message.author.send(self.bot.localizations.BLACKLISTED_BAN_DM.format(blacklisted_content))
-            except:
-                pass
+            except discord.Forbidden:
+                print(f"Error! Can't send user {message.author.name} DM!")
             await message.guild.ban(message.author,
                                     reason=self.bot.localizations.BLACKLISTED_BAN_LOG
                                     .format(blacklisted_content))
@@ -183,8 +183,8 @@ class Plugin(BaseModule):
             del self.kicklist[user.id]
         try:
             await message.author.send(self.bot.localizations.BLACKLISTED_KICK_DM.format(blacklisted_content))
-        except:
-            pass
+        except discord.Forbidden:
+            print(f"Error! Can't send user {message.author.name} DM!")
         await message.author.kick(reason=self.bot.localizations.BLACKLISTED_KICK_LOG.format(blacklisted_content))
         self.kicklist[user.id] = time.time()
 
@@ -220,8 +220,8 @@ class Plugin(BaseModule):
         if user.id in self.kicklist and self.kicklist[user.id] + 600 > time.time():
             try:
                 await message.author.send(self.bot.localizations.BLACKLISTED_BAN_DM.format(blacklisted_content))
-            except:
-                pass
+            except discord.Forbidden:
+                print(f"Error! Can't send user {message.author.name} DM!")
             await message.guild.ban(message.author,
                                     reason=self.bot.localizations.BLACKLISTED_BAN_LOG.format(blacklisted_content))
             await message.channel.send(self.bot.localizations.BLACKLISTED_BAN_ANNOUNCE.format(message.author.mention))
@@ -230,7 +230,7 @@ class Plugin(BaseModule):
             del self.kicklist[user.id]
         try:
             await message.author.send(self.bot.localizations.BLACKLISTED_KICK_DM.format(blacklisted_content))
-        except:
-            pass
+        except discord.Forbidden:
+            print(f"Error! Can't send user {message.author.name} DM!")
         await message.author.kick(reason=self.bot.localizations.BLACKLISTED_KICK_LOG.format(blacklisted_content))
         self.kicklist[user.id] = time.time()

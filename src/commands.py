@@ -251,7 +251,12 @@ class CommandManager(BaseModule):
         await message.reply(msg, delete_after=8.0) if message else \
             await interaction.response.send_message(msg, delete_after=8.0)
         if message:
-            await message.delete(delay=8.0)
+            try:
+                await message.delete(delay=8.0)
+            except discord.NotFound:
+                pass
+            except discord.Forbidden:
+                print(f"Error! Can't delete message {message.id}")
 
     async def message(self, msg: str = '', message: discord.Message = None, interaction: discord.Interaction = None,
                       file: discord.File | discord.utils.MISSING | None = discord.utils.MISSING,
@@ -276,13 +281,26 @@ class CommandManager(BaseModule):
                                 or (interaction and interaction.channel.id == self.bot.config.CHANNEL_BOTCOMMANDS)) \
             else delete_after
         if message and delete_after:
-            await message.delete(delay=delete_after)
+            try:
+                await message.delete(delay=delete_after)
+            except discord.Forbidden:
+                print(f"Error! Bot doesn't have permissions to delete message {message.id}!")
+            except discord.NotFound:
+                pass
         if not channel_send:
-            return await message.reply(msg, file=file, delete_after=delete_after) if message else \
-                await interaction.response.send_message(msg, file=file, delete_after=delete_after)
+            try:
+                return await message.reply(msg, file=file, delete_after=delete_after) if message else \
+                    await interaction.response.send_message(msg, file=file, delete_after=delete_after)
+            except discord.Forbidden:
+                print(f"Error! Bot doesn't have proper permissions to reply to a message or interaction")
+
         else:
-            return await message.channel.send(msg, file=file, delete_after=delete_after) if message else \
-                await interaction.channel.send(msg, file=file, delete_after=delete_after)
+            try:
+                return await message.channel.send(msg, file=file, delete_after=delete_after) if message else \
+                    await interaction.channel.send(msg, file=file, delete_after=delete_after)
+            except discord.Forbidden:
+                channel_name: str = message.channel.name if message else interaction.channel.name
+                print(f"Error! Bot doesn't have proper permissions to send to channel {channel_name}")
 
     async def on_message(self, message: discord.Message):
         """Parse the message and check whether it has an application command on it. Also gets the target user."""

@@ -40,7 +40,6 @@ class Plugin(BaseModule):
     def get_bauhaus_closing_time(self) -> str:
         current_time = src.functions.utc_to_local(src.functions.ts2dt(src.functions.get_current_timestamp()),
                                                   self.bot.config.TIMEZONE)
-        closing_time = None
         weekday = current_time.isoweekday()
         if weekday < 6:
             closing_time = BAUHAUS_OPENING_TIMES['weekday']['close']
