@@ -59,6 +59,12 @@ class Constants:
         [(226, 98), (226, 166), (226, 234)]
     ]
 
+    POSSIBLE_WINNING_LINES = {
+        (2, 0): ['3', '4'],
+        (2, 1): ['1'],
+        (2, 2): ['2', '5']
+    }
+
 
 class Images:
     lost_image: Image.Image = Image.open(get_filename('lost.png')).convert('RGBA').resize(Constants.BG_SIZE)
@@ -306,27 +312,56 @@ class Plugin(BaseModule):
         # build PIL images and save them on data/casino/
         files: list[str] = [get_data_filename('unpulled')]
         win_screen: Image.Image | None = None
+        looped_spots: list[tuple[int, int]] = []
         for i in range(Constants.COLUMNS):
-            if i == 1 and not partial_wins:
-                continue
-            bg: Image = Images.im_background.copy()
-            if i == Constants.COLUMNS - 1:
-                for win in wins:
-                    bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
-            if i == 1:
-                for partial_win in partial_wins:
-                    bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
-            for col in range(i + 1, Constants.COLUMNS):
-                for row in range(Constants.ROWS):
-                    bg.paste(Images.im_question, Constants.TILE_POSITIONS[col][row])
-            for col in range(0, i + 1):
-                for row in range(Constants.ROWS):
-                    bg.paste(chosen_reels[col][row].file, Constants.TILE_POSITIONS[col][row])
-            if i == Constants.COLUMNS - 1:
-                win_screen = bg
-            filename: str = get_data_filename(self.randomword(10))
-            bg.save(filename, **bg.info)
-            files.append(filename)
+            for j in range(Constants.ROWS):
+                looped_spots.append((i, j))
+                if i == 1 and j == 2 and not partial_wins:
+                    continue
+                # if i == 0 and j < 2:
+                #     continue
+                if i == 2 and j < 2:
+                    found = False
+                    for possible_wins in Constants.POSSIBLE_WINNING_LINES[(i, j)]:
+                        if possible_wins in partial_wins:
+                            found = True
+                    if not found:
+                        continue
+                    if j == 0 and '1' not in partial_wins and '2' not in partial_wins and '5' not in partial_wins:
+                        continue
+                    if j == 1 and '2' not in partial_wins and '5' not in partial_wins:
+                        continue
+                bg: Image = Images.im_background.copy()
+
+                if i >= 1 and partial_wins:
+                    for partial_win in partial_wins:
+                        if partial_win == '3' and i == 1:
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '2' and ((i == 1 and j == 2) or (i == 2 and j < 2)):
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '1' and ((i == 1 and j >= 1) or (i == 2 and j < 1)):
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '4' and i == 1 and j >= 1:
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '5' and ((i == 1 and j >= 1) or (i == 2 and j < 2)):
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+
+                if i == 2 and wins:
+                    for win in wins:
+                        if win == '3' or win == '4':
+                            bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+                        elif win == '1' and j >= 1:
+                            bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+                        elif (win == '2' or win == '5') and j == 2:
+                            bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+
+                for spot in looped_spots:
+                    bg.paste(chosen_reels[spot[0]][spot[1]].file, Constants.TILE_POSITIONS[spot[0]][spot[1]])
+                filename = get_data_filename(f"{i}_{j}")
+                bg.save(filename, **bg.info)
+                files.append(filename)
+                if i == 2 and j == 2:
+                    win_screen = bg
         amount: int = 0
         filename: str = get_data_filename(self.randomword(10))
         bg: Image.Image = win_screen.copy()
@@ -340,9 +375,11 @@ class Plugin(BaseModule):
             bg.paste(Images.title_image, (0, 0), Images.title_image)
             title_message = '{:,}'.format(amount)
             d = ImageDraw.Draw(bg)
-            w, h = d.textsize(title_message, font=Images.font)
+            w = d.textlength(title_message, font=Images.font)
             d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
                    stroke_width=-1, stroke_fill=(0, 0, 0))
+            # d.text(((Constants.BG_SIZE[0] - w) / 2, 82), title_message, fill=(255, 255, 255), font=Images.font,
+            #        stroke_width=1, stroke_fill=(0, 0, 0))
         bg.save(filename, **bg.info)
         files.append(filename)
 
@@ -374,8 +411,9 @@ class Plugin(BaseModule):
         embed.set_image(url=self.unpulled_casino_url)
         casino_post: discord.Message = await message.channel.send(embed=embed) if message else \
             await interaction.channel.send(embed=embed)
+        i: int = 1
         for f in files[1:]:
-            delete_after: int = 30 if (f != files[-1] or len(wins) == 0) else 0
+            delete_after: int = 25 if (f != files[-1] or len(wins) == 0) else 0
             post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
             urls.append(post.attachments[0].url)
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
@@ -384,8 +422,40 @@ class Plugin(BaseModule):
             embed.set_image(url=post.attachments[0].url)
             await self.casino_hide.send(embed=embed, delete_after=1.0)
 
+            embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
+                                  description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
+                                  .format('{:,}'.format(play_amount),
+                                          '{:,}'.format(self.get_user_balance(user) + play_amount if i < len(files) - 1 \
+                                                            else self.get_user_balance(user) + amount)))
+            embed.set_image(url=post.attachments[0].url)
+            await casino_post.edit(embed=embed)
+            await asyncio.sleep(1.5)
+            i += 1
+
+            if i == len(files):
+                if amount != 0:
+                    self.balances[user.id]['points'] += amount
+                    self.save_balances()
+                if len(wins) > 0 and amount >= 0:
+                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN.
+                                                          format(self.bot.client.get_user(user.id).mention,
+                                                                 '{:,}'.format(amount)),
+                                                          message, interaction, channel_send=True)
+                elif len(wins) > 0 > amount:
+                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
+                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
+                    await asyncio.sleep(10)
+                else:
+                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
+                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
+
+        # reset cooldown
+        self.casino_times[ch_id] = 0
+        await asyncio.sleep(4)
+
+
         # post the casino images to the user
-        i: int = 1
+        """i: int = 1
         for url in urls[1:]:
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
                                   description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
@@ -411,7 +481,10 @@ class Plugin(BaseModule):
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                 self.casino_times[ch_id] = 0
-            await asyncio.sleep(4)
+            if i == 2:
+                print("nyt odotellaan")
+                await asyncio.sleep(3)
+            await asyncio.sleep(2)"""
 
         # reset cooldown
         self.casino_times[ch_id] = 0
