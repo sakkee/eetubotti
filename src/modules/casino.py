@@ -129,7 +129,7 @@ class Plugin(BaseModule):
 
         @self.bot.commands.register(command_name='kasino', function=self.casino,
                                     description=self.bot.localizations.CASINO_DESCRIPTION, commands_per_day=30,
-                                    timeout=600)
+                                    timeout=600, level_required=10)
         async def kasino(interaction: discord.Interaction, summa: int = 100000):
             await self.bot.commands.commands['kasino'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
@@ -158,7 +158,7 @@ class Plugin(BaseModule):
 
         @self.bot.commands.register(command_name='give', function=self.give,
                                     description=self.bot.localizations.GIVE_DESCRIPTION, commands_per_day=10,
-                                    timeout=10)
+                                    timeout=3)
         async def give(interaction: discord.Interaction, käyttäjä: discord.User, summa: int = Constants.MAX_AMOUNT):
             await self.bot.commands.commands['give'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),

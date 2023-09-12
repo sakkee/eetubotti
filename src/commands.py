@@ -27,6 +27,7 @@ class Command:
             channel.
         requires_fulladmin (bool): Requires server highest administration permissions.
         requires_banrole (bool): Requires ban role permission.
+        level_required (int): The level the user must have to use this command.
 
     Attributes:
         thresholds (dict[User.id, int]): keep track of the times the command has been used by the user today.
@@ -45,6 +46,7 @@ class Command:
     allow_low_levels_in_bot_channel = True
     requires_fulladmin: bool = False
     requires_banrole: bool = False
+    level_required: int = 0
 
     def __post_init__(self):
         self.bot_channel_commands = self.commands_per_day * 3
@@ -104,6 +106,10 @@ class Command:
 
             if not is_admin:
                 return False, self.manager.bot.localizations.NOT_OWNER
+
+        if self.level_required > user.level and self.manager.bot.config.ROLE_SQUAD not in user.roles and \
+                self.manager.bot.config.ROLE_FULL_ADMINISTRATOR not in user.roles:
+            return False, self.manager.bot.localizations.TOO_LOW_LEVEL.format(self.level_required)
 
         if self.timeout != 0:
             if id in self.timeouts:
@@ -184,7 +190,7 @@ class CommandManager(BaseModule):
         self.clear_thresholds()
 
     def register(self, command_name: str, function: Callable, description: str = '', timeout: int = 15,
-                 commands_per_day: int = 15):
+                 commands_per_day: int = 15, level_required: int = 0):
         """Register a command to the Command Manager.
 
         USE THIS AS A DECORATOR!
@@ -195,6 +201,7 @@ class CommandManager(BaseModule):
             description (str): The description of the command that's visible in the Discord's slash commands tab.
             timeout (int): How many seconds the user must wait to use the command.
             commands_per_day (int): The times the user can use the command per day.
+            level_required (int): the level the user must have to use this command.
 
         Examples:
             @self.bot.commands.register(command_name='rakkaus', function=self.love,
@@ -221,7 +228,7 @@ class CommandManager(BaseModule):
         def decorator(fnc: Callable):
             """Decorates the executable function and adds it to the Bot's Command Tree."""
             self.commands[command_name] = Command(self, command_name, function, commands_per_day=commands_per_day,
-                                                  timeout=timeout)
+                                                  timeout=timeout, level_required=level_required)
             if command_name != 'ban':
                 self.point_commands[f'!{command_name}'] = command_name
             else:
