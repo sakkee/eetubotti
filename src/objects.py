@@ -38,6 +38,8 @@ class User:
     def add_points(self, points: int) -> bool:
         """Returns True if new level, else False.
         """
+        if self.bot:
+            return False
         self.stats.points += points
         self.stats.activity_points_today += points
         self.stats.should_update = True
