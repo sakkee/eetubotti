@@ -410,6 +410,8 @@ class Plugin(BaseModule):
         user: User = self.bot.get_user_by_id(member.id)
         if user is None:
             return
+        if user.bot:
+            return
         timestamp: float = functions.get_current_timestamp()
 
         # user is joining a NON-AFK voice channel from AFK or not from voice at all
