@@ -357,7 +357,7 @@ class Plugin(BaseModule):
 
                 for spot in looped_spots:
                     bg.paste(chosen_reels[spot[0]][spot[1]].file, Constants.TILE_POSITIONS[spot[0]][spot[1]])
-                filename = get_data_filename(f"{i}_{j}")
+                filename = get_data_filename(self.randomword(10))
                 bg.save(filename, **bg.info)
                 files.append(filename)
                 if i == 2 and j == 2:
@@ -452,39 +452,6 @@ class Plugin(BaseModule):
         # reset cooldown
         self.casino_times[ch_id] = 0
         await asyncio.sleep(4)
-
-
-        # post the casino images to the user
-        """i: int = 1
-        for url in urls[1:]:
-            embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
-                                  description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-                                  .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount if i < len(files) - 1 \
-                                      else self.get_user_balance(user) + amount)))
-            embed.set_image(url=url)
-            await casino_post.edit(embed=embed)
-            i += 1
-            if i == len(files):
-                if amount != 0:
-                    self.balances[user.id]['points'] += amount
-                    self.save_balances()
-                if len(wins) > 0 and amount >= 0:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN.
-                                                          format(self.bot.client.get_user(user.id).mention,
-                                                                 '{:,}'.format(amount)),
-                                                          message, interaction, channel_send=True)
-                elif len(wins) > 0 > amount:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
-                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
-                    await asyncio.sleep(10)
-                else:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
-                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
-                self.casino_times[ch_id] = 0
-            if i == 2:
-                print("nyt odotellaan")
-                await asyncio.sleep(3)
-            await asyncio.sleep(2)"""
 
         # reset cooldown
         self.casino_times[ch_id] = 0
