@@ -318,8 +318,8 @@ class Plugin(BaseModule):
                 looped_spots.append((i, j))
                 if i == 1 and j == 2 and not partial_wins:
                     continue
-                # if i == 0 and j < 2:
-                #     continue
+                if i == 0 and j < 2:
+                    continue
                 if i == 2 and j < 2:
                     found = False
                     for possible_wins in Constants.POSSIBLE_WINNING_LINES[(i, j)]:
