@@ -109,7 +109,7 @@ class Command:
 
         if self.level_required > user.level and self.manager.bot.config.ROLE_SQUAD not in user.roles and \
                 self.manager.bot.config.ROLE_FULL_ADMINISTRATOR not in user.roles:
-            return False, self.manager.bot.localizations.TOO_LOW_LEVEL.format(self.level_required)
+            return False, self.manager.bot.localizations.TOO_LOW_LEVEL_2.format(self.level_required)
 
         if self.timeout != 0:
             if id in self.timeouts:

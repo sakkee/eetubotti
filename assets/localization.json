@@ -6,6 +6,7 @@
     "TOO_MANY_COMMANDS": "Päivän **!{0}**-kiintiö on täynnä, mene: {1}",
     "TOO_MANY_COMMANDS_1": "Päivän **!{0}**-kiintiö on täynnä RIP IN PEACE",
     "TOO_LOW_LEVEL": "et oo tarpeeks isolevunen kokeile {0}",
+    "TOO_LOW_LEVEL_2": "äijä ei oo tarpeeks isolevunen, tuu takas sit ku oot level **{0}** :D",
     "NOT_OWNER": "Huutista sulle :D ei taida roolit riittää pojalla?+1++++",
     "IRC_DESCRIPTION": "tsekkaa ketä oot irkistä tänää :D",
     "USER_NOT_FOUND": "en löytänyt käyttäjää,, tai sitten en y,,ärtäny ",
