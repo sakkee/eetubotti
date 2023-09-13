@@ -73,7 +73,9 @@ class Images:
     font: ImageFont.FreeTypeFont = ImageFont.truetype(get_filename('comicbold.ttf'), 40)
     im_background: Image.Image = Image.open(get_filename('unpulled.png')).convert('RGBA').resize(
         Constants.BG_SIZE)
-    im_question: Image.Image = Image.open(get_filename('kysymys.png')).resize(Constants.TILESIZE)
+    anttu_lose: Image.Image = Image.open(get_filename('anttu_bonus_lose.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    anttu_win: Image.Image = Image.open(get_filename('anttu_bonus_win.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    anttu_win2: Image.Image = Image.open(get_filename('anttu_bonus_win.png')).convert('RGBA').resize((int(Constants.BG_SIZE[0] * 0.8), int(Constants.BG_SIZE[1] * 0.8)))
 
     win_images: dict[str, Image] = {
         '1': Image.open(get_filename('linja1.png')),
@@ -309,6 +311,11 @@ class Plugin(BaseModule):
 
         self.balances[user.id]['points'] -= play_amount
 
+        anttu_bonus: int = 1
+        if wins:
+            roll = random.randint(0, 9)
+            anttu_bonus = 0 if roll == 0 else 2 if roll == 1 else 1  # 10% chance for anttulose, 10% for anttu double
+
         # build PIL images and save them on data/casino/
         files: list[str] = [get_data_filename('unpulled')]
         win_screen: Image.Image | None = None
@@ -378,10 +385,41 @@ class Plugin(BaseModule):
             w = d.textlength(title_message, font=Images.font)
             d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
                    stroke_width=-1, stroke_fill=(0, 0, 0))
-            # d.text(((Constants.BG_SIZE[0] - w) / 2, 82), title_message, fill=(255, 255, 255), font=Images.font,
-            #        stroke_width=1, stroke_fill=(0, 0, 0))
         bg.save(filename, **bg.info)
         files.append(filename)
+
+        if len(wins) and anttu_bonus != 1:
+            anttu_bg: Image.Image = bg.copy()
+            anttu_bg.paste(Images.anttu_lose, (0, 178), Images.anttu_lose)
+            filename = get_data_filename(self.randomword(10))
+            anttu_bg.save(filename, **anttu_bg.info)
+            files.append(filename)
+
+            anttu_bonus_img: Image.Image = win_screen.copy()
+            anttu_bonus_img.paste(Images.anttu_lose if not anttu_bonus else Images.anttu_win, (0, 0),
+                                  Images.anttu_lose if not anttu_bonus else Images.anttu_win)
+
+            filename = get_data_filename(self.randomword(10))
+            anttu_bonus_img.save(filename, **anttu_bonus_img.info)
+            files.append(filename)
+
+            anttu_final: Image.Image = win_screen.copy()
+            amount *= anttu_bonus
+            if amount:
+                anttu_final.paste(Images.anttu_win2, (int((Images.anttu_win.width - Images.anttu_win2.width) / 2), -30), Images.anttu_win2)
+                anttu_final.paste(Images.title_image, (0, 30), Images.title_image)
+                title_message = '{:,}'.format(amount)
+                d = ImageDraw.Draw(anttu_final)
+                w = d.textlength(title_message, font=Images.font)
+                d.text(((Constants.BG_SIZE[0] - w) / 2, 220), title_message, fill=(255, 255, 255), font=Images.font,
+                       stroke_width=1, stroke_fill=(0, 0, 0))
+
+            else:
+                anttu_final.paste(Images.anttu_lose, (0, 0), Images.anttu_lose)
+                anttu_final.paste(Images.lost_image, (0, -60), Images.lost_image)
+            filename = get_data_filename(self.randomword(10))
+            anttu_final.save(filename, **anttu_final.info)
+            files.append(filename)
 
         # respond to interaction
         if interaction:
