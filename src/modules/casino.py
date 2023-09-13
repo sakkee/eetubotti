@@ -429,7 +429,7 @@ class Plugin(BaseModule):
                                                             else self.get_user_balance(user) + amount)))
             embed.set_image(url=post.attachments[0].url)
             await casino_post.edit(embed=embed)
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(2)
             i += 1
 
             if i == len(files):
