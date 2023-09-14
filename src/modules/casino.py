@@ -648,7 +648,7 @@ class Plugin(BaseModule):
 
     async def on_new_day(self, date_now: datetime):
         for file in os.listdir('data/casino/'):
-            if 'unpulled' not in file and '.png' in file:
+            if 'unpulled' not in file and '.png' in file and 'bonus.png' not in file:
                 os.remove(f'data/casino/{file}')
 
     def init_balances(self):
