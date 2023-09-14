@@ -39,7 +39,7 @@ class Constants:
     MAX_AMOUNT: int = 1000000
     MIN_AMOUNT: int = 1
     TILESIZE: tuple[int, int] = (39, 51)
-    BG_SIZE: tuple[int, int] = (365, 301)
+    BG_SIZE: tuple[int, int] = (365, 220)
     ROWS: int = 3
     COLUMNS: int = 3
     MAXIMUM: int = 32
@@ -54,9 +54,9 @@ class Constants:
     }
 
     TILE_POSITIONS: list[list[tuple[int, int]]] = [
-        [(96, 98), (96, 166), (96, 234)],
-        [(161, 98), (161, 166), (161, 234)],
-        [(226, 98), (226, 166), (226, 234)]
+        [(96, 17), (96, 85), (96, 153)],
+        [(161, 17), (161, 85), (161, 153)],
+        [(226, 17), (226, 85), (226, 153)]
     ]
 
     POSSIBLE_WINNING_LINES = {
@@ -70,12 +70,12 @@ class Images:
     lost_image: Image.Image = Image.open(get_filename('lost.png')).convert('RGBA').resize(Constants.BG_SIZE)
     won_image: Image.Image = Image.open(get_filename('won.png')).convert('RGBA').resize(Constants.BG_SIZE)
     title_image: Image.Image = Image.open(get_filename('title.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    bonus_image: Image.Image = Image.open(get_filename('bonus.png')).convert('RGBA').resize(Constants.BG_SIZE)
     font: ImageFont.FreeTypeFont = ImageFont.truetype(get_filename('comicbold.ttf'), 40)
     im_background: Image.Image = Image.open(get_filename('unpulled.png')).convert('RGBA').resize(
         Constants.BG_SIZE)
     anttu_lose: Image.Image = Image.open(get_filename('anttu_bonus_lose.png')).convert('RGBA').resize(Constants.BG_SIZE)
     anttu_win: Image.Image = Image.open(get_filename('anttu_bonus_win.png')).convert('RGBA').resize(Constants.BG_SIZE)
-    anttu_win2: Image.Image = Image.open(get_filename('anttu_bonus_win.png')).convert('RGBA').resize((int(Constants.BG_SIZE[0] * 0.8), int(Constants.BG_SIZE[1] * 0.8)))
 
     win_images: dict[str, Image] = {
         '1': Image.open(get_filename('linja1.png')),
@@ -115,12 +115,14 @@ class Plugin(BaseModule):
     chips: list[Chip] = field(default_factory=list)
     casino_hide: discord.TextChannel = None  # the channel where to hide the images to make casino smooth
     unpulled_casino_url: str = None  # link to the unpulled image of the casino
+    bonus_casino_url: str = None  # link to the bonus image of the casino
     balances: dict[int, dict[str, int]] = field(default_factory=lambda: {})
 
     def __post_init__(self):
         if not os.path.exists(f'data/casino/'):
             os.mkdir(f'data/casino/')
-        shutil.copyfile(get_filename('unpulled.png'), 'data/casino/unpulled.png')
+        shutil.copyfile(get_filename('unpulled.png'), get_data_filename('unpulled'))
+        shutil.copyfile(get_filename('bonus.png'), get_data_filename('bonus'))
 
         with open(get_filename('pelimerkit.json')) as f:
             chips = json.load(f)
@@ -212,13 +214,13 @@ class Plugin(BaseModule):
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 3:
                 # no sum given
-                #self.reset_cooldown(user)
+                # self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.GIVE_GUIDE, message)
                 return
             try:
                 sum = int(contents[2])
             except ValueError:
-                #self.reset_cooldown(user)
+                # self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.GIVE_GUIDE, message)
                 return
         sum = min(self.get_user_balance(user), sum)
@@ -313,8 +315,8 @@ class Plugin(BaseModule):
 
         anttu_bonus: int = 1
         if wins:
-            roll = random.randint(0, 9)
-            anttu_bonus = 0 if roll == 0 else 2 if roll == 1 else 1  # 10% chance for anttulose, 10% for anttu double
+            roll = random.randint(0, 99)
+            anttu_bonus = 0 if roll < 15 else 2 if roll >= 85 else 1  # 15% chance for anttulose, 15% for anttu double
 
         # build PIL images and save them on data/casino/
         files: list[str] = [get_data_filename('unpulled')]
@@ -383,14 +385,31 @@ class Plugin(BaseModule):
             title_message = '{:,}'.format(amount)
             d = ImageDraw.Draw(bg)
             w = d.textlength(title_message, font=Images.font)
-            d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
+            d.text(((Constants.BG_SIZE[0] - w) / 2, 131), title_message, fill=(255, 255, 255), font=Images.font,
                    stroke_width=-1, stroke_fill=(0, 0, 0))
         bg.save(filename, **bg.info)
         files.append(filename)
 
         if len(wins) and anttu_bonus != 1:
+            filename = get_data_filename("bonus")
+            if not os.path.exists(filename):
+                bonus_bg: Image.Image = Images.bonus_image.copy()
+                bonus_bg.save(filename, **bonus_bg.info)
+            files.append(filename)
+
+            bg: Image.Image = win_screen.copy()
+            filename = get_data_filename(self.randomword(10))
+            bg.save(filename, **bg.info)
+            files.append(filename)
+
             anttu_bg: Image.Image = bg.copy()
             anttu_bg.paste(Images.anttu_lose, (0, 178), Images.anttu_lose)
+            filename = get_data_filename(self.randomword(10))
+            anttu_bg.save(filename, **anttu_bg.info)
+            files.append(filename)
+
+            anttu_bg: Image.Image = bg.copy()
+            anttu_bg.paste(Images.anttu_lose, (0, 140), Images.anttu_lose)
             filename = get_data_filename(self.randomword(10))
             anttu_bg.save(filename, **anttu_bg.info)
             files.append(filename)
@@ -406,17 +425,17 @@ class Plugin(BaseModule):
             anttu_final: Image.Image = win_screen.copy()
             amount *= anttu_bonus
             if amount:
-                anttu_final.paste(Images.anttu_win2, (int((Images.anttu_win.width - Images.anttu_win2.width) / 2), -30), Images.anttu_win2)
-                anttu_final.paste(Images.title_image, (0, 30), Images.title_image)
+                anttu_final.paste(Images.anttu_win, (0, -95), Images.anttu_win)
+                anttu_final.paste(Images.title_image, (0, 0), Images.title_image)
                 title_message = '{:,}'.format(amount)
                 d = ImageDraw.Draw(anttu_final)
                 w = d.textlength(title_message, font=Images.font)
-                d.text(((Constants.BG_SIZE[0] - w) / 2, 220), title_message, fill=(255, 255, 255), font=Images.font,
+                d.text(((Constants.BG_SIZE[0] - w) / 2, 131), title_message, fill=(255, 255, 255), font=Images.font,
                        stroke_width=1, stroke_fill=(0, 0, 0))
 
             else:
-                anttu_final.paste(Images.anttu_lose, (0, 0), Images.anttu_lose)
-                anttu_final.paste(Images.lost_image, (0, -60), Images.lost_image)
+                anttu_final.paste(Images.anttu_lose, (0, 60), Images.anttu_lose)
+                anttu_final.paste(Images.lost_image, (0, 0), Images.lost_image)
             filename = get_data_filename(self.randomword(10))
             anttu_final.save(filename, **anttu_final.info)
             files.append(filename)
@@ -441,6 +460,7 @@ class Plugin(BaseModule):
             embed.set_image(url=self.unpulled_casino_url)
             await self.casino_hide.send(embed=embed)
         urls.append(self.unpulled_casino_url)
+
         embed: discord.Embed = discord.Embed(
             title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
             description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
@@ -451,15 +471,29 @@ class Plugin(BaseModule):
             await interaction.channel.send(embed=embed)
         i: int = 1
         for f in files[1:]:
-            delete_after: int = 25 if (f != files[-1] or len(wins) == 0) else 0
-            post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
-            urls.append(post.attachments[0].url)
-            embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
-                                  description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-                                  .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount)))
-            embed.set_image(url=post.attachments[0].url)
-            await self.casino_hide.send(embed=embed, delete_after=25.0)
-            await asyncio.sleep(0.6)
+            if 'bonus.png' in f:
+                if not self.bonus_casino_url:
+                    # bonus image hasn't been posted...
+                    post: discord.Message = await self.casino_hide.send(file=discord.File(f))
+                    self.bonus_casino_url = post.attachments[0].url
+                    embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
+                                          description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
+                                          .format(play_amount, self.get_user_balance(user) + play_amount)
+                                          )
+                    embed.set_image(url=self.bonus_casino_url)
+                    await self.casino_hide.send(embed=embed)
+                urls.append(self.bonus_casino_url)
+            else:
+                delete_after: int = 25 if (f != files[-1] or len(wins) == 0) else 0
+                post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
+                urls.append(post.attachments[0].url)
+                embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
+                                      description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
+                                      .format('{:,}'.format(play_amount),
+                                              '{:,}'.format(self.get_user_balance(user) + play_amount)))
+                embed.set_image(url=post.attachments[0].url)
+                await self.casino_hide.send(embed=embed, delete_after=25.0)
+                await asyncio.sleep(0.6)
 
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
                                   description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
@@ -476,10 +510,13 @@ class Plugin(BaseModule):
                     self.balances[user.id]['points'] += amount
                     self.save_balances()
                 if len(wins) > 0 and amount >= 0:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN.
-                                                          format(self.bot.client.get_user(user.id).mention,
-                                                                 '{:,}'.format(amount)),
-                                                          message, interaction, channel_send=True)
+                    loc_text = self.bot.localizations.CASINO_WIN.format(
+                        self.bot.client.get_user(user.id).mention, '{:,}'.format(amount)) if anttu_bonus == 1 else \
+                        self.bot.localizations.CASINO_WIN_ANTTU.format(self.bot.client.get_user(user.id).mention,
+                                                                       '{:,}'.format(amount)) if anttu_bonus == 2 else \
+                            self.bot.localizations.CASINO_WIN_ANTTU_LOSE.format(
+                                self.bot.client.get_user(user.id).mention)
+                    msg = await self.bot.commands.message(loc_text, message, interaction, channel_send=True)
                 elif len(wins) > 0 > amount:
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)

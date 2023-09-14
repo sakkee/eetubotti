@@ -52,6 +52,8 @@
     "CASINO_EMBED_TITLE": "{0}:n kasino :Dddd",
     "CASINO_EMBED_DESCRIPTION": "Panos: {0}, saldo: {1}",
     "CASINO_WIN": "{0} ei vittu :Dddd äijä voitti **{1}** !! :DDD ONNEKS OLKOO :DDD",
+    "CASINO_WIN_ANTTU": "{0} ei vittu :DDDd äijä voitti **{1}** kun anttu tuplas sen :DD ONNEKS OLKOON :D",
+    "CASINO_WIN_ANTTU_LOSE": "{0} ei vittu :DDdd anttu vei sun voittos :DD VITUTTAAKO NAMI NAMI :D",
     "CASINO_WIN_BAN": "{0} ei vittu :Dddd äijä voitti **BÄNNIT** !! :DDdd ONNEKS OLKOO :DD HUUTISTA",
     "CASINO_LOSE": "{0} HUUTISTA LUUSERILLE :DD äijä hävis :D etkö osaa ees pelaa :---D",
     "CASINO_LAUNCH": "käynnistetäänpäs {0}:n kasino,,, phojankhlopphi",
