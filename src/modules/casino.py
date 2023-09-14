@@ -483,6 +483,7 @@ class Plugin(BaseModule):
                     embed.set_image(url=self.bonus_casino_url)
                     await self.casino_hide.send(embed=embed)
                 urls.append(self.bonus_casino_url)
+                url = self.bonus_casino_url
             else:
                 delete_after: int = 25 if (f != files[-1] or len(wins) == 0) else 0
                 post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
@@ -494,13 +495,14 @@ class Plugin(BaseModule):
                 embed.set_image(url=post.attachments[0].url)
                 await self.casino_hide.send(embed=embed, delete_after=25.0)
                 await asyncio.sleep(0.6)
+                url = post.attachments[0].url
 
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
                                   description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
                                   .format('{:,}'.format(play_amount),
                                           '{:,}'.format(self.get_user_balance(user) + play_amount if i < len(files) - 1 \
                                                             else self.get_user_balance(user) + amount)))
-            embed.set_image(url=post.attachments[0].url)
+            embed.set_image(url=url)
             await casino_post.edit(embed=embed)
             await asyncio.sleep(2)
             i += 1
