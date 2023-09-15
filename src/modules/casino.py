@@ -219,7 +219,7 @@ class Plugin(BaseModule):
                 await self.bot.commands.error(self.bot.localizations.GIVE_GUIDE, message)
                 return
             try:
-                sum = int(contents[2])
+                sum = int(contents[2].replace(',', ''))
             except ValueError:
                 # self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.GIVE_GUIDE, message)
