@@ -272,7 +272,7 @@ class Plugin(BaseModule):
                 self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.CASINO_GUIDE, message)
                 return
-            if contents[1] == 'YOLO':
+            if contents[1] == 'yolo':
                 sum = self.get_user_balance(user)
                 all_in = True
             elif contents[1] != 'max':
