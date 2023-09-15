@@ -169,7 +169,7 @@ class Plugin(BaseModule):
         @self.bot.commands.register(command_name='give', function=self.give,
                                     description=self.bot.localizations.GIVE_DESCRIPTION, commands_per_day=10,
                                     timeout=3)
-        async def give(interaction: discord.Interaction, käyttäjä: discord.User, summa: int = Constants.MAX_AMOUNT):
+        async def give(interaction: discord.Interaction, käyttäjä: discord.User, summa: int):
             await self.bot.commands.commands['give'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction,
@@ -188,7 +188,8 @@ class Plugin(BaseModule):
 
     async def low_balances(self, user: User, message: discord.Message | None = None,
                            interaction: discord.Interaction | None = None, **kwargs):
-        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users]
+        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users if
+                                               x.is_in_guild]
         sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: tup[1])[:10]
         msg: str = self.bot.localizations.LOW_BALANCES_TITLE
         for i in range(len(sorted_balance_list)):
@@ -263,6 +264,7 @@ class Plugin(BaseModule):
                      interaction: discord.Interaction | None = None,
                      sum: int = Constants.MAX_AMOUNT,
                      **kwargs):
+        all_in: bool = False
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
@@ -270,7 +272,10 @@ class Plugin(BaseModule):
                 self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.CASINO_GUIDE, message)
                 return
-            if contents[1] != 'max':
+            if contents[1] == 'YOLO':
+                sum = self.get_user_balance(user)
+                all_in = True
+            elif contents[1] != 'max':
                 try:
                     sum = int(contents[1])
                     if sum > Constants.MAX_AMOUNT or sum < Constants.MIN_AMOUNT:
@@ -286,6 +291,8 @@ class Plugin(BaseModule):
 
         # parse betting sum
         play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
+        if all_in:
+            play_amount = max(0, self.get_user_balance(user))
         if play_amount < Constants.MIN_AMOUNT:
             await self.bot.commands.error(self.bot.localizations.TOO_LOW_BALANCE, message, interaction)
             return
@@ -523,9 +530,9 @@ class Plugin(BaseModule):
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                     await asyncio.sleep(10)
-                else:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
-                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
+                # else:
+                #     msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
+                #         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
 
         # reset cooldown
         self.casino_times[ch_id] = 0
