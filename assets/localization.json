@@ -120,5 +120,6 @@
     "BAUHAUS_NOT_FOUND": "Virhe tapahtui, en löytänyt monelta Bauhaus menee kiinni",
     "BAUHAUS_CLOSED_TODAY": "Bauhaus ei ole tänään ollenkaan auki :(",
     "BAUHAUS_CLOSING_HOUR": "Bauhaus menee tänään kiinni klo {0}:00",
-    "BAUHAUS_CLOSED_ALREADY": "Bauhaus meni tänään kiinni jo klo {0}:00 :( rip"
+    "BAUHAUS_CLOSED_ALREADY": "Bauhaus meni tänään kiinni jo klo {0}:00 :( rip",
+    "TARGET_TOO_LOW_LEVEL": "**{0}** on liian pieni level tähän komentoon :( pitää olla vähintään **{1}** level"
 }

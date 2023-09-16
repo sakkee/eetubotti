@@ -139,7 +139,7 @@ class Plugin(BaseModule):
 
         @self.bot.commands.register(command_name='kasino', function=self.casino,
                                     description=self.bot.localizations.CASINO_DESCRIPTION, commands_per_day=30,
-                                    timeout=600, level_required=10)
+                                    timeout=600)
         async def kasino(interaction: discord.Interaction, summa: int = 100000):
             await self.bot.commands.commands['kasino'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
@@ -201,7 +201,7 @@ class Plugin(BaseModule):
 
     async def give(self, user: User, message: discord.Message | None = None,
                    interaction: discord.Interaction | None = None,
-                   target_user: discord.User | None = None, sum: int = Constants.MAX_AMOUNT):
+                   target_user: User | None = None, sum: int = Constants.MAX_AMOUNT):
         if self.get_user_balance(user) < 0:
             await self.bot.commands.error(self.bot.localizations.GIVE_TOO_POOR, message, interaction)
             return
@@ -211,6 +211,11 @@ class Plugin(BaseModule):
         if target_user == user:
             await self.bot.commands.error(self.bot.localizations.GIVE_CANT_SELF, message, interaction)
             return
+        if target_user.level < 10:
+            await self.bot.commands.error(self.bot.localizations.TARGET_TOO_LOW_LEVEL.format(target_user.name, '10'),
+                                          message, interaction)
+            return
+
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 3:
@@ -530,9 +535,6 @@ class Plugin(BaseModule):
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                     await asyncio.sleep(10)
-                # else:
-                #     msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
-                #         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
 
         # reset cooldown
         self.casino_times[ch_id] = 0
