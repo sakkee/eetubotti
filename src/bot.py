@@ -241,3 +241,17 @@ class Bot(EventHandler):
             return
         user.set_roles(None)
         user.is_in_guild = False
+
+    async def send_dm(self, user: discord.User | discord.Member | User, message: str):
+        """Sends DM to a User.
+
+        Args:
+            user (discord.User | discord.Member | User): User to send the DM to.
+            message: The message sent to the user
+        """
+        if isinstance(user, User):
+            user: discord.User = self.client.get_user(user.id)
+        try:
+            await user.send(message)
+        except discord.Forbidden:
+            print(f"Error! Can't send user {user.name} dm!")

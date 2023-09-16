@@ -86,10 +86,8 @@ class Plugin(BaseModule):
             await self.bot.commands.error(self.bot.localizations.BAN_NOT_IN_GUILD.format(member.name), message,
                                           interaction)
             return
-        try:
-            await member.send(self.bot.localizations.BAN_DM.format(hours, reason))
-        except discord.Forbidden:
-            pass
+
+        await self.bot.send_dm(member, self.bot.localizations.BAN_DM.format(hours, reason))
 
         try:
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
@@ -256,12 +254,8 @@ class Plugin(BaseModule):
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):
         hours: int = DEFAULT_BAN_LENGTH * 60 * 60
         if user in self.ban_list:
-            try:
-                await user.send(self.bot.localizations.BAN_DM
-                                .format(hours, self.bot.localizations.BAN_DEFAULT_REASON))
-            except discord.Forbidden:
-                print(f"Error! Can't send DM to user {user.name}")
-                pass
+            await self.bot.send_dm(
+                user, self.bot.localizations.BAN_DM.format(hours, self.bot.localizations.BAN_DEFAULT_REASON))
             return
         self.ban_list[user] = time.time() + DEFAULT_BAN_LENGTH * 60 * 60
         self.save_bans()

@@ -119,12 +119,8 @@ class Plugin(BaseModule):
         await message.channel.send(self.bot.localizations.BAN_ANNOUNCE_5S.format(target_discord_user.mention))
         await asyncio.sleep(5)
         reason: str = self.bot.localizations.ANTTU_BAN_REASON
-        try:
-            await target_discord_user.send(
-                self.bot.localizations.BAN_DM.format(self.bot.config.DEFAULT_BAN_LENGTH_HOURS, reason)
-            )
-        except discord.Forbidden:
-            print(f"Error! Can't send user {target_discord_user.name} DM!")
+        await self.bot.send_dm(target_discord_user,
+                               self.bot.localizations.BAN_DM.format(self.bot.config.DEFAULT_BAN_LENGTH_HOURS, reason))
         try:
             await message.guild.ban(target_discord_user, reason=reason, delete_message_days=0)
             await message.channel.send(
