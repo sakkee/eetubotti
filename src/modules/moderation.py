@@ -79,7 +79,7 @@ class Plugin(BaseModule):
             if content_list[-1].isnumeric():
                 hours = int(content_list[-1])
         hours = max(1, min(18, hours))
-        reason = self.bot.localizations.BAN_DEFAULT_REASON if not reason else reason
+        reason = self.bot.localizations.BAN_DEFAULT_REASON.format(hours) if not reason else reason
         member: discord.Member = await self.bot.server.fetch_member(target_user.id)
 
         if not member:
@@ -202,6 +202,9 @@ class Plugin(BaseModule):
         hours: int = DEFAULT_EMOJI_BAN_LENGTH
         reason: str = message_content
         try:
+            await self.bot.send_dm(
+                member, self.bot.localizations.BAN_DM.format(hours,
+                                                             self.bot.localizations.BAN_DEFAULT_REASON.format(hours)))
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
             await self.bot.commands.message(self.bot.localizations.BAN_CHANNEL_ANNOUNCE
                                             .format(member.name, hours, reason, payload.member.name),
@@ -255,7 +258,8 @@ class Plugin(BaseModule):
         hours: int = DEFAULT_BAN_LENGTH * 60 * 60
         if user in self.ban_list:
             await self.bot.send_dm(
-                user, self.bot.localizations.BAN_DM.format(hours, self.bot.localizations.BAN_DEFAULT_REASON))
+                user, self.bot.localizations.BAN_DM.format(hours,
+                                                           self.bot.localizations.BAN_DEFAULT_REASON.format(hours)))
             return
         self.ban_list[user] = time.time() + DEFAULT_BAN_LENGTH * 60 * 60
         self.save_bans()

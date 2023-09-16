@@ -81,7 +81,7 @@
     "BAN_NO_PERMISSION": "eipä tainnu olla oikeuksia tähä kys :D",
     "BAN_NOT_IN_GUILD": "en löytänyt servulta {0}",
     "BAN_DM": "Olet bännätty {0} tunniksi, syy:\n> {1}\nLinkki takaisin (toivottavasti toimii): https://discord.com/invite/sW6Dr2K",
-    "BAN_DEFAULT_REASON": "12 tunnin bän",
+    "BAN_DEFAULT_REASON": "{0} tunnin bän",
     "BAN_CANT_BAN": "en voi bännätä {0} onks se joku admin :D",
     "BAN_CHANNEL_ANNOUNCE": "Bännäsin just {0} {1} tunniksi :DDD. Syy: {2} (bännin antoi: {3})",
     "UNBANNED_MEMBER": "unbännäsin just {0} että pitäkää hauskaa taas :D",
