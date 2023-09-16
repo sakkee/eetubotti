@@ -548,8 +548,6 @@ class Plugin(BaseModule):
             pass
         finally:
             await casino_post.delete()
-            if len(wins) == 0:
-                await msg.delete()
         i: int = 0
         for file in files[1:]:
             i += 1
