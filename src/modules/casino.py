@@ -520,6 +520,8 @@ class Plugin(BaseModule):
             i += 1
 
             if i == len(files):
+                # reset cooldown
+                self.casino_times[ch_id] = 0
                 if amount != 0:
                     self.balances[user.id]['points'] += amount
                     self.save_balances()
@@ -536,12 +538,7 @@ class Plugin(BaseModule):
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                     await asyncio.sleep(10)
 
-        # reset cooldown
-        self.casino_times[ch_id] = 0
         await asyncio.sleep(4)
-
-        # reset cooldown
-        self.casino_times[ch_id] = 0
 
         try:
             if message:
