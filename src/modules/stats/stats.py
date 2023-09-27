@@ -236,7 +236,7 @@ class Plugin(BaseModule):
         active_users: list[User] = [x[0] for x in
                                     functions.get_actives(self.bot.users, self.bot.daylist, 14, 15, False)]
         active_role: discord.Role = self.bot.server.get_role(self.bot.config.ROLE_ACTIVE)
-        member: discord.Member = self.bot.server.get_member(user.id)
+        member: discord.Member = await self.bot.server.fetch_member(user.id)
         await self.refresh_level_roles(user)
         if user in active_users:
             await member.add_roles(active_role)
@@ -394,7 +394,7 @@ class Plugin(BaseModule):
         addable_roles: list[discord.Role] = [
             self.bot.server.get_role(x) for x in level_roles if x not in user.roles
         ]
-        member = self.bot.server.get_member(user.id)
+        member = await self.bot.server.fetch_member(user.id)
         if member is None or member.bot or member.id in self.bot.config.IGNORE_LEVEL_USERS:  # wasabi exception
             return
         try:
