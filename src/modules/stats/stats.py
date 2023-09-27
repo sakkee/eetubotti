@@ -99,6 +99,8 @@ class Plugin(BaseModule):
 
     async def on_new_day(self, date_now: datetime):
         await self.update_actives()
+        for user in self.bot.users:
+            await self.refresh_level_roles(user)
 
     async def rank(self, user: User, message: discord.Message | None = None,
                    interaction: discord.Interaction | None = None,
