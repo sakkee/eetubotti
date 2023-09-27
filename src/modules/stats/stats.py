@@ -394,7 +394,10 @@ class Plugin(BaseModule):
         addable_roles: list[discord.Role] = [
             self.bot.server.get_role(x) for x in level_roles if x not in user.roles
         ]
-        member = await self.bot.server.fetch_member(user.id)
+        try:
+            member = await self.bot.server.fetch_member(user.id)
+        except discord.errors.NotFound:
+            return
         if member is None or member.bot or member.id in self.bot.config.IGNORE_LEVEL_USERS:  # wasabi exception
             return
         try:
