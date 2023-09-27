@@ -396,6 +396,8 @@ class Plugin(BaseModule):
         addable_roles: list[discord.Role] = [
             self.bot.server.get_role(x) for x in level_roles if x not in user.roles
         ]
+        if not removable_roles and not addable_roles:
+            return
         try:
             member = await self.bot.server.fetch_member(user.id)
         except discord.errors.NotFound:
