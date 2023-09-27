@@ -233,7 +233,6 @@ class Plugin(BaseModule):
 
     async def on_member_join(self, member: discord.Member):
         user = self.bot.get_user_by_id(member.id)
-        user.is_in_guild = True
         await asyncio.sleep(15)
         active_users: list[User] = [x[0] for x in
                                     functions.get_actives(self.bot.users, self.bot.daylist, 14, 15, False)]
@@ -388,6 +387,8 @@ class Plugin(BaseModule):
         await self.new_message(message)
 
     async def refresh_level_roles(self, user: User):
+        if not user.is_in_guild or user.bot or user.id in self.bot.config.IGNORE_LEVEL_USERS:
+            return
         level_roles: list[int] = self.bot.config.get_level_roles(user.level)
         removable_roles: list[discord.Role] = [
             self.bot.server.get_role(x) for x in user.roles if x in self.bot.config.ALL_LEVEL_ROLES \
@@ -402,7 +403,7 @@ class Plugin(BaseModule):
             member = await self.bot.server.fetch_member(user.id)
         except discord.errors.NotFound:
             return
-        if member is None or member.bot or member.id in self.bot.config.IGNORE_LEVEL_USERS:  # wasabi exception
+        if member is None:
             return
         try:
             for role in removable_roles:

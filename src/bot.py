@@ -227,6 +227,7 @@ class Bot(EventHandler):
 
     async def on_member_join(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
+        user.is_in_guild = True
         if user is not None:
             return
         filepath: str = await self.get_user_file(member)
