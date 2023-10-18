@@ -8,6 +8,7 @@ Commands:
     !saldot
     !give
     !maksuhäiriöt
+    !palautusprosentti
 """
 
 from dataclasses import field, dataclass
@@ -117,6 +118,7 @@ class Plugin(BaseModule):
     unpulled_casino_url: str = None  # link to the unpulled image of the casino
     bonus_casino_url: str = None  # link to the bonus image of the casino
     balances: dict[int, dict[str, int]] = field(default_factory=lambda: {})
+    roi_dict: dict[str, int] = field(default_factory=lambda: {})  # {"saldo_winnings": 351211, "saldo_player": 2323123}
 
     def __post_init__(self):
         if not os.path.exists(f'data/casino/'):
@@ -130,6 +132,13 @@ class Plugin(BaseModule):
                 self.chips.append(Chip(**chip))
 
     async def on_ready(self):
+        if not os.path.exists(get_data_filename('roi', 'json')):
+            self.roi_dict = {
+                "saldo_winnings": 0,
+                "saldo_played": 0
+            }
+            with open(get_data_filename('roi', 'json'), 'w') as f:
+                json.dump(self.roi_dict, f)
         if not os.path.exists(get_data_filename('balances', 'json')):
             self.init_balances()
         else:
@@ -185,6 +194,21 @@ class Plugin(BaseModule):
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction
             )
+
+        @self.bot.commands.register(command_name='palautusprosentti', function=self.roi,
+                                    description=self.bot.localizations.LOW_BALANCES_DESCRIPTION,
+                                    commands_per_day=15, timeout=10)
+        async def roi(interaction: discord.Interaction):
+            await self.bot.commands.commands['palautusprosentti'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+    async def roi(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None, **kwargs):
+        roi_percent: float = self.roi_dict['saldo_winnings'] / self.roi_dict['saldo_played'] * 100 if \
+            self.roi_dict['saldo_played'] else 0.0
+        msg: str = self.bot.localizations.CASINO_ROI.format('{:0.2f}'.format(roi_percent))
+        await self.bot.commands.message(msg, message, interaction, delete_after=15)
 
     async def low_balances(self, user: User, message: discord.Message | None = None,
                            interaction: discord.Interaction | None = None, **kwargs):
@@ -324,6 +348,7 @@ class Plugin(BaseModule):
         partial_wins = self.check_partial_wins(chosen_reels)
 
         self.balances[user.id]['points'] -= play_amount
+        self.roi_dict['saldo_played'] += play_amount
 
         anttu_bonus: int = 1
         if wins:
@@ -524,7 +549,9 @@ class Plugin(BaseModule):
                 self.casino_times[ch_id] = 0
                 if amount != 0:
                     self.balances[user.id]['points'] += amount
-                    self.save_balances()
+                    self.roi_dict['saldo_winnings'] += amount
+
+                self.save_balances()
                 if len(wins) > 0 and amount >= 0:
                     loc_text = self.bot.localizations.CASINO_WIN.format(
                         self.bot.client.get_user(user.id).mention, '{:,}'.format(amount)) if anttu_bonus == 1 else \
@@ -665,6 +692,10 @@ class Plugin(BaseModule):
         for user in self.bot.users:
             self.balances[user.id] = {'points': self.user_points_to_balance(user.stats.points),
                                       'reduce_points': self.user_points_to_balance(user.stats.points)}
+        self.roi_dict = {
+            "saldo_winnings": 0,
+            "saldo_played": 0
+        }
         self.save_balances()
 
     def save_balances(self):
@@ -673,12 +704,16 @@ class Plugin(BaseModule):
             for user_id in self.balances:
                 balances[str(user_id)] = self.balances[user_id]
             json.dump(balances, f)
+        with open(get_data_filename('roi', 'json'), 'w') as f:
+            json.dump(self.roi_dict, f)
 
     def load_balances(self):
         with open(get_data_filename('balances', 'json'), 'r') as f:
             balances = json.load(f)
             for user_id in balances:
                 self.balances[int(user_id)] = balances[user_id]
+        with open(get_data_filename('roi', 'json'), 'r') as f:
+            self.roi_dict = json.load(f)
 
     async def on_member_join(self, member: discord.Member):
         if member.id not in self.balances:
