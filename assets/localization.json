@@ -57,7 +57,7 @@
     "CASINO_WIN_BAN": "{0} ei vittu :Dddd äijä voitti **BÄNNIT** !! :DDdd ONNEKS OLKOO :DD HUUTISTA",
     "CASINO_LOSE": "{0} HUUTISTA LUUSERILLE :DD äijä hävis :D etkö osaa ees pelaa :---D",
     "CASINO_LAUNCH": "käynnistetäänpäs {0}:n kasino,,, phojankhlopphi",
-    "CASINO_ROI": "kasinon palautusprosentti laskujen mukaan on **{0}** %",
+    "CASINO_ROI": "kasinon toteutunut palautusprosentti on **{0}** % (laskennallinen palautusprosentti 100.3%)",
     "BIRTHDAY_ANNOUNCE_JUSU": "@everyone Tänään on {0} synttärit!!!! WUHUU JIPPIIIII!!!!",
     "BIRTHDAY_ANNOUNCE": "Tänään on käyttäjän {0} synttärit! Wuhuu JIPPII!",
     "DOUBLE_DESCRIPTION": "koitas rollaa tuplat",
