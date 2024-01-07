@@ -68,6 +68,10 @@ class CfgParser:
         return self.get_role('LEVEL_20')
 
     @property
+    def ROLE_LEVEL_10(self) -> int:
+        return self.get_role('LEVEL_10')
+
+    @property
     def ROLE_MUTED(self) -> int:
         return self.get_role('MUTED')
 
