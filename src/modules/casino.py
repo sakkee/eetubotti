@@ -469,10 +469,15 @@ class Plugin(BaseModule):
                 w = d.textlength(title_message, font=Images.font)
                 d.text(((Constants.BG_SIZE[0] - w) / 2, 131), title_message, fill=(255, 255, 255), font=Images.font,
                        stroke_width=1, stroke_fill=(0, 0, 0))
+                if 623974457404293130 in self.balances:
+                    self.balances[623974457404293130]['points'] -= amount
 
             else:
                 anttu_final.paste(Images.anttu_lose, (0, 60), Images.anttu_lose)
                 anttu_final.paste(Images.lost_image, (0, 0), Images.lost_image)
+
+                if 623974457404293130 in self.balances:
+                    self.balances[623974457404293130]['points'] += amount
             filename = get_data_filename(self.randomword(10))
             anttu_final.save(filename, **anttu_final.info)
             files.append(filename)
