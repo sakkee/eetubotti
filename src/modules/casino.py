@@ -9,6 +9,7 @@ Commands:
     !give
     !maksuhäiriöt
     !palautusprosentti
+    !kela
 """
 
 from dataclasses import field, dataclass
@@ -203,6 +204,50 @@ class Plugin(BaseModule):
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction
             )
+
+        @self.bot.commands.register(command_name='kela', function=self.kela,
+                                    description=self.bot.localizations.KELA_DESCRIPTION,
+                                    commands_per_day=1, timeout=43200)
+        async def kela(interaction: discord.Interaction):
+            await self.bot.commands.commands['kela'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+    async def kela(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None, **kwargs):
+        user_saldo = self.get_user_balance(user)
+        if user_saldo >= 0:
+            await self.bot.commands.error(self.bot.localizations.CASINO_CANT_KELA, message, interaction)
+            return
+
+        saldo_to_give: int = 200000
+        if abs(user_saldo) < saldo_to_give:
+            saldo_to_give = abs(user_saldo)
+        list_of_users: list[int] = list(self.balances.keys())
+        random.shuffle(list_of_users)
+        robbed_users: list[User] = []
+        remaining_saldo: int = saldo_to_give
+        robbed_message: str = ''
+        for user_id in list_of_users:
+            if user_id == user.id:
+                continue
+            if remaining_saldo <= 0:
+                break
+            robbed_user = self.bot.get_user_by_id(user_id)
+            user_saldo = self.get_user_balance(robbed_user)
+            if user_saldo <= 0:
+                continue
+            if robbed_message != '':
+                robbed_message += ', '
+            robbed_users.append(robbed_user)
+            robbed_saldo = min(user_saldo, remaining_saldo)
+            self.balances[robbed_user.id]['points'] -= robbed_saldo
+            remaining_saldo -= robbed_saldo
+            robbenings = '{:,}'.format(robbed_saldo)
+            robbed_message += f'**{robbed_user.name}** ({robbenings} saldoa)'
+        self.balances[user.id]['points'] += saldo_to_give
+        self.save_balances()
+        await self.bot.commands.message(self.bot.localizations.CASINO_KELA.format(user.name, robbed_message), message, interaction)
 
     async def roi(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None, **kwargs):
         roi_percent: float = self.roi_dict['saldo_winnings'] / self.roi_dict['saldo_played'] * 100 if \
