@@ -1,5 +1,10 @@
 """
 Random fun stuff.
+
+Commands:
+    !kissa
+    !kissat
+    !kissa_top
 """
 import json
 import re
