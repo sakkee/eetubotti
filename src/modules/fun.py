@@ -67,6 +67,15 @@ class Plugin(BaseModule):
                 interaction=interaction
             )
 
+        @self.bot.commands.register(command_name='kissat_top', function=self.kissa_top,
+                                    description=self.bot.localizations.KISSA_TOP_DESCRIPTION, commands_per_day=20,
+                                    timeout=1)
+        async def kissat_top(interaction: discord.Interaction):
+            await self.bot.commands.commands['kissat_top'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
     async def kissa_top(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None,
                         **kwargs):
         kissa_rankings = self.get_kissa_rankings()[:10]
