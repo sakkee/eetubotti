@@ -112,6 +112,10 @@ class CfgParser:
         return self.get_role('EVERYONE')
 
     @property
+    def ROLE_CAT(self) -> int:
+        return self.get_role('CAT')
+
+    @property
     def PREVENT_CHANNEL_CREATION_ROLE(self) -> int:
         return self.get_role('PREVENT_CHANNEL_CREATION_ROLE')
 

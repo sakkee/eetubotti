@@ -131,7 +131,7 @@
     "KISSA_DESCRIPTION": "Näyttää kuinka hyvä kissa käyttäjä on",
     "KISSA_TOP_DESCRIPTION": "Näyttää servun 10 parasta kissaa",
     "USER_NOT_KISSA": "Käyttäjä ei ole kissa :(",
-    "KISSAT_SET": "Merkitty käyttäjät {0} kissoiksi",
+    "KISSAT_SET": "{0}:n mielestä serverin kissoja ovat {1}",
     "KISSA_RANKING": "**{0}** on servun #{1} paras kissa",
     "KISSA_TOP": "**Servun parhaimmat kissat**:\n{0}",
     "KISSA_TOP_ROW": "> {0}. paras kissa: **{1}**\n",

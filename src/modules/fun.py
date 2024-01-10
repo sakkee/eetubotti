@@ -134,8 +134,34 @@ class Plugin(BaseModule):
             if user.id not in self.cat_rankings:
                 self.cat_rankings[user.id] = {"rankings": [], "sum": 0}
             user_list += f"**{kissa.name}**"
+        await self.bot.commands.message(self.bot.localizations.KISSAT_SET.format(user.name, user_list), message, interaction)
         self.refresh_cat_rankings()
-        await self.bot.commands.message(self.bot.localizations.KISSAT_SET.format(user_list), message, interaction)
+        top_cats = self.get_kissa_rankings()[:1]
+
+        cat_role: discord.Role = self.bot.server.get_role(self.bot.config.ROLE_CAT)
+        if cat_role is None:
+            return
+        for user in self.bot.users:
+            if self.bot.config.ROLE_CAT in user.roles and user not in top_cats:
+                discord_user = self.bot.server.get_member(user.id)
+                if discord_user is None:
+                    continue
+                try:
+                    await discord_user.remove_roles(cat_role)
+                except discord.Forbidden:
+                    continue
+                except discord.HTTPException:
+                    continue
+            elif self.bot.config.ROLE_CAT not in user.roles and user in top_cats:
+                discord_user = self.bot.server.get_member(user.id)
+                if discord_user is None:
+                    continue
+                try:
+                    await discord_user.add_roles(cat_role)
+                except discord.Forbidden:
+                    continue
+                except discord.HTTPException:
+                    continue
 
     def refresh_cat_rankings(self, save: bool = True):
         # calculate sum of points per user in cat rankings
