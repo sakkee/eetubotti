@@ -108,14 +108,14 @@ class Plugin(BaseModule):
         kissat = []
         if interaction:
             for kissa in [servun_paras_kissa, toinen, kolmas, neljas, viides]:
-                if not kissa or not self.bot.get_user_by_id(kissa.id) or kissa.id == user.id:
+                if not kissa or not self.bot.get_user_by_id(kissa.id) or kissa.id == user.id or self.bot.get_user_by_id(kissa.id) in kissat:
                     continue
                 kissat.append(self.bot.get_user_by_id(kissa.id))
         elif message:
             id_list: list[int] = [int(x) for x in re.findall(r'\d+', message.content)]
             for id in id_list:
                 kissa = self.bot.get_user_by_id(id)
-                if kissa is None or kissa.id == user.id:
+                if kissa is None or kissa.id == user.id or kissa in kissat:
                     continue
                 kissat.append(kissa)
         if not kissat:
