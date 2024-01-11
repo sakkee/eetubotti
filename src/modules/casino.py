@@ -220,7 +220,10 @@ class Plugin(BaseModule):
             await self.bot.commands.error(self.bot.localizations.CASINO_CANT_KELA, message, interaction)
             return
 
-        saldo_to_give: int = 200000
+        saldo_to_give: int = abs(user_saldo) // 30
+
+        if saldo_to_give == 0:
+            saldo_to_give = 1
         if abs(user_saldo) < saldo_to_give:
             saldo_to_give = abs(user_saldo)
         list_of_users: list[int] = list(self.balances.keys())
