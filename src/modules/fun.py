@@ -22,9 +22,6 @@ BAUHAUS_OPENING_TIMES: dict[str, dict[str, int]] = {
 }
 BAUHAUS_TRIGGER_WORDS: list[tuple[str, str]] = [("bauhaus", "kii"), ("bauhaus", "kiinni"), ("bauhaus", "auki")]
 
-# cat points per ranking
-CAT_POINTS = [25, 18, 15, 12, 10]
-
 
 @dataclass
 class Plugin(BaseModule):
@@ -36,16 +33,16 @@ class Plugin(BaseModule):
         @self.bot.commands.register(command_name='kissat', function=self.kissat,
                                     description=self.bot.localizations.KISSAT_DESCRIPTION, commands_per_day=5,
                                     timeout=1)
-        async def kissat(interaction: discord.Interaction, servun_paras_kissa: discord.User, toinen: discord.User,
-                         kolmas: discord.User, neljas: discord.User, viides: discord.User):
+        async def kissat(interaction: discord.Interaction, kissa1: discord.User, kissa2: discord.User = None,
+                         kissa3: discord.User = None, kissa4: discord.User = None, kissa5: discord.User = None):
             await self.bot.commands.commands['kissat'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction,
-                servun_paras_kissa=servun_paras_kissa,
-                toinen=toinen,
-                kolmas=kolmas,
-                neljas=neljas,
-                viides=viides
+                kissa1=kissa1,
+                kissa2=kissa2,
+                kissa3=kissa3,
+                kissa4=kissa4,
+                kissa5=kissa5
             )
 
         @self.bot.commands.register(command_name='kissa', function=self.kissa,
@@ -112,11 +109,11 @@ class Plugin(BaseModule):
 
     async def kissat(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None,
                      target_user: discord.User = None,
-                     servun_paras_kissa: discord.User = None, toinen: discord.User = None, kolmas: discord.User = None,
-                     neljas: discord.User = None, viides: discord.User = None, **kwargs):
+                     kissa1: discord.User = None, kissa2: discord.User = None, kissa3: discord.User = None,
+                     kissa4: discord.User = None, kissa5: discord.User = None, **kwargs):
         kissat = []
         if interaction:
-            for kissa in [servun_paras_kissa, toinen, kolmas, neljas, viides]:
+            for kissa in [kissa1, kissa2, kissa3, kissa4, kissa5]:
                 if not kissa or not self.bot.get_user_by_id(kissa.id) or kissa.id == user.id or self.bot.get_user_by_id(kissa.id) in kissat:
                     continue
                 kissat.append(self.bot.get_user_by_id(kissa.id))
@@ -184,8 +181,8 @@ class Plugin(BaseModule):
             if voted_user not in self.cat_rankings:
                 self.cat_rankings[voted_user] = {"rankings": [], "sum": 0}
         for user_id in self.cat_rankings:
-            for index, user in enumerate(self.cat_rankings[user_id]["rankings"]):
-                self.cat_rankings[user.id]["sum"] += CAT_POINTS[index] * self.bot.get_user_by_id(user_id).level
+            for user in self.cat_rankings[user_id]["rankings"]:
+                self.cat_rankings[user.id]["sum"] += self.bot.get_user_by_id(user_id).level
         if save:
             self.save_cat_rankings()
 
