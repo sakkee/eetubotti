@@ -342,6 +342,7 @@ class Plugin(BaseModule):
                      sum: int = Constants.MAX_AMOUNT,
                      **kwargs):
         all_in: bool = False
+        is_random: bool = False
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
@@ -352,6 +353,10 @@ class Plugin(BaseModule):
             if contents[1] == 'yolo':
                 sum = self.get_user_balance(user)
                 all_in = True
+            elif contents[1] == 'random':
+                if self.get_user_balance(user) >= Constants.MIN_AMOUNT:
+                    sum = random.randint(Constants.MIN_AMOUNT, self.get_user_balance(user))
+                    is_random = True
             elif contents[1] != 'max':
                 try:
                     sum = int(contents[1])
@@ -366,10 +371,13 @@ class Plugin(BaseModule):
                     await self.bot.commands.error(self.bot.localizations.CASINO_GUIDE, message)
                     return
 
+
         # parse betting sum
         play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
         if all_in:
             play_amount = max(0, self.get_user_balance(user))
+        elif is_random:
+            play_amount = sum
         if play_amount < Constants.MIN_AMOUNT:
             await self.bot.commands.error(self.bot.localizations.TOO_LOW_BALANCE, message, interaction)
             return
