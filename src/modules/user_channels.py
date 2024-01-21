@@ -274,6 +274,8 @@ class Plugin(BaseModule):
             for perm in iter(after.overwrites.get(permission)):
                 if perm[0] != 'mention_everyone' or not perm[1]:
                     continue
+                if perm[0] == 'mention_everyone' and perm[1]:
+                    await channel.discord_channel.set_permissions(permission, mention_everyone=False)
                 if permission.id == channel.owner.id:
                     await channel.discord_channel.set_permissions(
                         permission, mention_everyone=False, send_tts_messages=False, read_messages=True,
