@@ -161,10 +161,10 @@ class Plugin(BaseModule):
             if not usr.is_in_guild:
                 continue
             if self.bot.config.ROLE_BIRTHDAY in usr.roles and not self.has_birthday(usr, date_now):
-                member = self.bot.server.get_member(usr.id)
+                member = await self.bot.server.fetch_member(usr.id)
                 await member.remove_roles(birthday_role)
             elif self.bot.config.ROLE_BIRTHDAY not in usr.roles and self.has_birthday(usr, date_now):
-                member = self.bot.server.get_member(usr.id)
+                member = await self.bot.server.fetch_member(usr.id)
                 await member.add_roles(birthday_role)
 
                 if member.id == 212594150124552192:
