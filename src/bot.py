@@ -236,6 +236,13 @@ class Bot(EventHandler):
         self.users.append(user)
         self.database.add_user(user)
 
+    async def on_member_ban(self, guild: discord.Guild, user: discord.User):
+        user: User = self.get_user_by_id(user.id)
+        if user is None:
+            return
+        user.set_roles(None)
+        user.is_in_guild = False
+
     async def on_member_remove(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
         if user is None:
