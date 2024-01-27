@@ -57,6 +57,11 @@ class EventDispatcher:
             except Exception as e:
                 print(f"Module {module.__class__.__module__} failed {event_name}: {e}")
 
+                traceback = e.__traceback__
+                while traceback:
+                    print("{}: {}".format(traceback.tb_frame.f_code.co_filename, traceback.tb_lineno))
+                    traceback = traceback.tb_next
+
     async def on_audit_log_entry_create(self, entry: discord.AuditLogEntry):
         await self.handle_event('on_audit_log_entry_create', entry)
 

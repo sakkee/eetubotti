@@ -8,6 +8,8 @@ Commands:
     !saldot
     !give
     !maksuhäiriöt
+    !palautusprosentti
+    !kela
 """
 
 from dataclasses import field, dataclass
@@ -39,7 +41,7 @@ class Constants:
     MAX_AMOUNT: int = 1000000
     MIN_AMOUNT: int = 1
     TILESIZE: tuple[int, int] = (39, 51)
-    BG_SIZE: tuple[int, int] = (365, 301)
+    BG_SIZE: tuple[int, int] = (365, 220)
     ROWS: int = 3
     COLUMNS: int = 3
     MAXIMUM: int = 32
@@ -54,20 +56,28 @@ class Constants:
     }
 
     TILE_POSITIONS: list[list[tuple[int, int]]] = [
-        [(96, 98), (96, 166), (96, 234)],
-        [(161, 98), (161, 166), (161, 234)],
-        [(226, 98), (226, 166), (226, 234)]
+        [(96, 17), (96, 85), (96, 153)],
+        [(161, 17), (161, 85), (161, 153)],
+        [(226, 17), (226, 85), (226, 153)]
     ]
+
+    POSSIBLE_WINNING_LINES = {
+        (2, 0): ['3', '4'],
+        (2, 1): ['1'],
+        (2, 2): ['2', '5']
+    }
 
 
 class Images:
     lost_image: Image.Image = Image.open(get_filename('lost.png')).convert('RGBA').resize(Constants.BG_SIZE)
     won_image: Image.Image = Image.open(get_filename('won.png')).convert('RGBA').resize(Constants.BG_SIZE)
     title_image: Image.Image = Image.open(get_filename('title.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    bonus_image: Image.Image = Image.open(get_filename('bonus.png')).convert('RGBA').resize(Constants.BG_SIZE)
     font: ImageFont.FreeTypeFont = ImageFont.truetype(get_filename('comicbold.ttf'), 40)
     im_background: Image.Image = Image.open(get_filename('unpulled.png')).convert('RGBA').resize(
         Constants.BG_SIZE)
-    im_question: Image.Image = Image.open(get_filename('kysymys.png')).resize(Constants.TILESIZE)
+    anttu_lose: Image.Image = Image.open(get_filename('anttu_bonus_lose.png')).convert('RGBA').resize(Constants.BG_SIZE)
+    anttu_win: Image.Image = Image.open(get_filename('anttu_bonus_win.png')).convert('RGBA').resize(Constants.BG_SIZE)
 
     win_images: dict[str, Image] = {
         '1': Image.open(get_filename('linja1.png')),
@@ -107,12 +117,15 @@ class Plugin(BaseModule):
     chips: list[Chip] = field(default_factory=list)
     casino_hide: discord.TextChannel = None  # the channel where to hide the images to make casino smooth
     unpulled_casino_url: str = None  # link to the unpulled image of the casino
+    bonus_casino_url: str = None  # link to the bonus image of the casino
     balances: dict[int, dict[str, int]] = field(default_factory=lambda: {})
+    roi_dict: dict[str, int] = field(default_factory=lambda: {})  # {"saldo_winnings": 351211, "saldo_player": 2323123}
 
     def __post_init__(self):
         if not os.path.exists(f'data/casino/'):
             os.mkdir(f'data/casino/')
-        shutil.copyfile(get_filename('unpulled.png'), 'data/casino/unpulled.png')
+        shutil.copyfile(get_filename('unpulled.png'), get_data_filename('unpulled'))
+        shutil.copyfile(get_filename('bonus.png'), get_data_filename('bonus'))
 
         with open(get_filename('pelimerkit.json')) as f:
             chips = json.load(f)
@@ -120,6 +133,13 @@ class Plugin(BaseModule):
                 self.chips.append(Chip(**chip))
 
     async def on_ready(self):
+        if not os.path.exists(get_data_filename('roi', 'json')):
+            self.roi_dict = {
+                "saldo_winnings": 0,
+                "saldo_played": 0
+            }
+            with open(get_data_filename('roi', 'json'), 'w') as f:
+                json.dump(self.roi_dict, f)
         if not os.path.exists(get_data_filename('balances', 'json')):
             self.init_balances()
         else:
@@ -158,8 +178,8 @@ class Plugin(BaseModule):
 
         @self.bot.commands.register(command_name='give', function=self.give,
                                     description=self.bot.localizations.GIVE_DESCRIPTION, commands_per_day=10,
-                                    timeout=10)
-        async def give(interaction: discord.Interaction, käyttäjä: discord.User, summa: int = Constants.MAX_AMOUNT):
+                                    timeout=3)
+        async def give(interaction: discord.Interaction, käyttäjä: discord.User, summa: int):
             await self.bot.commands.commands['give'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction,
@@ -176,9 +196,72 @@ class Plugin(BaseModule):
                 interaction=interaction
             )
 
+        @self.bot.commands.register(command_name='palautusprosentti', function=self.roi,
+                                    description=self.bot.localizations.LOW_BALANCES_DESCRIPTION,
+                                    commands_per_day=15, timeout=10)
+        async def roi(interaction: discord.Interaction):
+            await self.bot.commands.commands['palautusprosentti'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+        @self.bot.commands.register(command_name='kela', function=self.kela,
+                                    description=self.bot.localizations.KELA_DESCRIPTION,
+                                    commands_per_day=1, timeout=43200)
+        async def kela(interaction: discord.Interaction):
+            await self.bot.commands.commands['kela'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction
+            )
+
+    async def kela(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None, **kwargs):
+        user_saldo = self.get_user_balance(user)
+        if user_saldo >= 0:
+            await self.bot.commands.error(self.bot.localizations.CASINO_CANT_KELA, message, interaction)
+            return
+
+        saldo_to_give: int = abs(user_saldo) // 30
+
+        if saldo_to_give == 0:
+            saldo_to_give = 1
+        if abs(user_saldo) < saldo_to_give:
+            saldo_to_give = abs(user_saldo)
+        list_of_users: list[int] = list(self.balances.keys())
+        random.shuffle(list_of_users)
+        robbed_users: list[User] = []
+        remaining_saldo: int = saldo_to_give
+        robbed_message: str = ''
+        for user_id in list_of_users:
+            if user_id == user.id:
+                continue
+            if remaining_saldo <= 0:
+                break
+            robbed_user = self.bot.get_user_by_id(user_id)
+            user_saldo = self.get_user_balance(robbed_user)
+            if user_saldo <= 0:
+                continue
+            if robbed_message != '':
+                robbed_message += ', '
+            robbed_users.append(robbed_user)
+            robbed_saldo = min(user_saldo, remaining_saldo)
+            self.balances[robbed_user.id]['points'] -= robbed_saldo
+            remaining_saldo -= robbed_saldo
+            robbenings = '{:,}'.format(robbed_saldo)
+            robbed_message += f'**{robbed_user.name}** ({robbenings} saldoa)'
+        self.balances[user.id]['points'] += saldo_to_give
+        self.save_balances()
+        await self.bot.commands.message(self.bot.localizations.CASINO_KELA.format(user.name, robbed_message), message, interaction)
+
+    async def roi(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None, **kwargs):
+        roi_percent: float = self.roi_dict['saldo_winnings'] / self.roi_dict['saldo_played'] * 100 if \
+            self.roi_dict['saldo_played'] else 0.0
+        msg: str = self.bot.localizations.CASINO_ROI.format('{:0.2f}'.format(roi_percent))
+        await self.bot.commands.message(msg, message, interaction, delete_after=15)
+
     async def low_balances(self, user: User, message: discord.Message | None = None,
                            interaction: discord.Interaction | None = None, **kwargs):
-        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users]
+        balance_list: list[tuple[str, int]] = [(x.name, self.get_user_balance(x)) for x in self.bot.users if
+                                               x.is_in_guild]
         sorted_balance_list: list[tuple[str, int]] = sorted(balance_list, key=lambda tup: tup[1])[:10]
         msg: str = self.bot.localizations.LOW_BALANCES_TITLE
         for i in range(len(sorted_balance_list)):
@@ -190,7 +273,7 @@ class Plugin(BaseModule):
 
     async def give(self, user: User, message: discord.Message | None = None,
                    interaction: discord.Interaction | None = None,
-                   target_user: discord.User | None = None, sum: int = Constants.MAX_AMOUNT):
+                   target_user: User | None = None, sum: int = Constants.MAX_AMOUNT):
         if self.get_user_balance(user) < 0:
             await self.bot.commands.error(self.bot.localizations.GIVE_TOO_POOR, message, interaction)
             return
@@ -200,17 +283,22 @@ class Plugin(BaseModule):
         if target_user == user:
             await self.bot.commands.error(self.bot.localizations.GIVE_CANT_SELF, message, interaction)
             return
+        if target_user.level < 10:
+            await self.bot.commands.error(self.bot.localizations.TARGET_TOO_LOW_LEVEL.format(target_user.name, '10'),
+                                          message, interaction)
+            return
+
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 3:
                 # no sum given
-                #self.reset_cooldown(user)
+                # self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.GIVE_GUIDE, message)
                 return
             try:
-                sum = int(contents[2])
+                sum = int(contents[2].replace(',', ''))
             except ValueError:
-                #self.reset_cooldown(user)
+                # self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.GIVE_GUIDE, message)
                 return
         sum = min(self.get_user_balance(user), sum)
@@ -253,6 +341,8 @@ class Plugin(BaseModule):
                      interaction: discord.Interaction | None = None,
                      sum: int = Constants.MAX_AMOUNT,
                      **kwargs):
+        all_in: bool = False
+        is_random: bool = False
         if message:
             contents: list[str] = message.content.lower().split(' ')
             if len(contents) < 2:
@@ -260,7 +350,14 @@ class Plugin(BaseModule):
                 self.reset_cooldown(user)
                 await self.bot.commands.error(self.bot.localizations.CASINO_GUIDE, message)
                 return
-            if contents[1] != 'max':
+            if contents[1] == 'yolo':
+                sum = self.get_user_balance(user)
+                all_in = True
+            elif contents[1] == 'random':
+                if self.get_user_balance(user) >= Constants.MIN_AMOUNT:
+                    sum = random.randint(Constants.MIN_AMOUNT, self.get_user_balance(user))
+                    is_random = True
+            elif contents[1] != 'max':
                 try:
                     sum = int(contents[1])
                     if sum > Constants.MAX_AMOUNT or sum < Constants.MIN_AMOUNT:
@@ -274,8 +371,13 @@ class Plugin(BaseModule):
                     await self.bot.commands.error(self.bot.localizations.CASINO_GUIDE, message)
                     return
 
+
         # parse betting sum
         play_amount: int = min(self.get_user_balance(user), max(min(sum, Constants.MAX_AMOUNT), Constants.MIN_AMOUNT))
+        if all_in:
+            play_amount = max(0, self.get_user_balance(user))
+        elif is_random:
+            play_amount = sum
         if play_amount < Constants.MIN_AMOUNT:
             await self.bot.commands.error(self.bot.localizations.TOO_LOW_BALANCE, message, interaction)
             return
@@ -302,31 +404,66 @@ class Plugin(BaseModule):
         partial_wins = self.check_partial_wins(chosen_reels)
 
         self.balances[user.id]['points'] -= play_amount
+        self.roi_dict['saldo_played'] += play_amount
+
+        anttu_bonus: int = 1
+        if wins:
+            roll = random.randint(0, 99)
+            anttu_bonus = 0 if roll < 15 else 2 if roll >= 85 else 1  # 15% chance for anttulose, 15% for anttu double
 
         # build PIL images and save them on data/casino/
         files: list[str] = [get_data_filename('unpulled')]
         win_screen: Image.Image | None = None
+        looped_spots: list[tuple[int, int]] = []
         for i in range(Constants.COLUMNS):
-            if i == 1 and not partial_wins:
-                continue
-            bg: Image = Images.im_background.copy()
-            if i == Constants.COLUMNS - 1:
-                for win in wins:
-                    bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
-            if i == 1:
-                for partial_win in partial_wins:
-                    bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
-            for col in range(i + 1, Constants.COLUMNS):
-                for row in range(Constants.ROWS):
-                    bg.paste(Images.im_question, Constants.TILE_POSITIONS[col][row])
-            for col in range(0, i + 1):
-                for row in range(Constants.ROWS):
-                    bg.paste(chosen_reels[col][row].file, Constants.TILE_POSITIONS[col][row])
-            if i == Constants.COLUMNS - 1:
-                win_screen = bg
-            filename: str = get_data_filename(self.randomword(10))
-            bg.save(filename, **bg.info)
-            files.append(filename)
+            for j in range(Constants.ROWS):
+                looped_spots.append((i, j))
+                if i == 1 and j == 2 and not partial_wins:
+                    continue
+                if i == 0 and j < 2:
+                    continue
+                if i == 2 and j < 2:
+                    found = False
+                    for possible_wins in Constants.POSSIBLE_WINNING_LINES[(i, j)]:
+                        if possible_wins in partial_wins:
+                            found = True
+                    if not found:
+                        continue
+                    if j == 0 and '1' not in partial_wins and '2' not in partial_wins and '5' not in partial_wins:
+                        continue
+                    if j == 1 and '2' not in partial_wins and '5' not in partial_wins:
+                        continue
+                bg: Image = Images.im_background.copy()
+
+                if i >= 1 and partial_wins:
+                    for partial_win in partial_wins:
+                        if partial_win == '3' and i == 1:
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '2' and ((i == 1 and j == 2) or (i == 2 and j < 2)):
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '1' and ((i == 1 and j >= 1) or (i == 2 and j < 1)):
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '4' and i == 1 and j >= 1:
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+                        elif partial_win == '5' and ((i == 1 and j >= 1) or (i == 2 and j < 2)):
+                            bg.paste(Images.partial_images[partial_win], (0, 0), Images.partial_images[partial_win])
+
+                if i == 2 and wins:
+                    for win in wins:
+                        if win == '3' or win == '4':
+                            bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+                        elif win == '1' and j >= 1:
+                            bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+                        elif (win == '2' or win == '5') and j == 2:
+                            bg.paste(Images.win_images[win], (0, 0), Images.win_images[win])
+
+                for spot in looped_spots:
+                    bg.paste(chosen_reels[spot[0]][spot[1]].file, Constants.TILE_POSITIONS[spot[0]][spot[1]])
+                filename = get_data_filename(self.randomword(10))
+                bg.save(filename, **bg.info)
+                files.append(filename)
+                if i == 2 and j == 2:
+                    win_screen = bg
         amount: int = 0
         filename: str = get_data_filename(self.randomword(10))
         bg: Image.Image = win_screen.copy()
@@ -340,11 +477,68 @@ class Plugin(BaseModule):
             bg.paste(Images.title_image, (0, 0), Images.title_image)
             title_message = '{:,}'.format(amount)
             d = ImageDraw.Draw(bg)
-            w, h = d.textsize(title_message, font=Images.font)
-            d.text(((Constants.BG_SIZE[0] - w) / 2, 190), title_message, fill=(255, 255, 255), font=Images.font,
+            w = d.textlength(title_message, font=Images.font)
+            d.text(((Constants.BG_SIZE[0] - w) / 2, 131), title_message, fill=(255, 255, 255), font=Images.font,
                    stroke_width=-1, stroke_fill=(0, 0, 0))
         bg.save(filename, **bg.info)
         files.append(filename)
+
+        if len(wins) and anttu_bonus != 1:
+            filename = get_data_filename("bonus")
+            if not os.path.exists(filename):
+                bonus_bg: Image.Image = Images.bonus_image.copy()
+                bonus_bg.save(filename, **bonus_bg.info)
+            files.append(filename)
+
+            bg: Image.Image = win_screen.copy()
+            filename = get_data_filename(self.randomword(10))
+            bg.save(filename, **bg.info)
+            files.append(filename)
+
+            anttu_bg: Image.Image = bg.copy()
+            anttu_bg.paste(Images.anttu_lose, (0, 178), Images.anttu_lose)
+            filename = get_data_filename(self.randomword(10))
+            anttu_bg.save(filename, **anttu_bg.info)
+            files.append(filename)
+
+            anttu_bg: Image.Image = bg.copy()
+            anttu_bg.paste(Images.anttu_lose, (0, 140), Images.anttu_lose)
+            filename = get_data_filename(self.randomword(10))
+            anttu_bg.save(filename, **anttu_bg.info)
+            files.append(filename)
+
+            anttu_bonus_img: Image.Image = win_screen.copy()
+            anttu_bonus_img.paste(Images.anttu_lose if not anttu_bonus else Images.anttu_win, (0, 0),
+                                  Images.anttu_lose if not anttu_bonus else Images.anttu_win)
+
+            filename = get_data_filename(self.randomword(10))
+            anttu_bonus_img.save(filename, **anttu_bonus_img.info)
+            files.append(filename)
+
+            anttu_final: Image.Image = win_screen.copy()
+
+            original_amount: int = amount
+            amount *= anttu_bonus
+            if amount:
+                anttu_final.paste(Images.anttu_win, (0, -95), Images.anttu_win)
+                anttu_final.paste(Images.title_image, (0, 0), Images.title_image)
+                title_message = '{:,}'.format(amount)
+                d = ImageDraw.Draw(anttu_final)
+                w = d.textlength(title_message, font=Images.font)
+                d.text(((Constants.BG_SIZE[0] - w) / 2, 131), title_message, fill=(255, 255, 255), font=Images.font,
+                       stroke_width=1, stroke_fill=(0, 0, 0))
+                if 623974457404293130 in self.balances:
+                    self.balances[623974457404293130]['points'] -= original_amount
+
+            else:
+                anttu_final.paste(Images.anttu_lose, (0, 60), Images.anttu_lose)
+                anttu_final.paste(Images.lost_image, (0, 0), Images.lost_image)
+
+                if 623974457404293130 in self.balances:
+                    self.balances[623974457404293130]['points'] += original_amount
+            filename = get_data_filename(self.randomword(10))
+            anttu_final.save(filename, **anttu_final.info)
+            files.append(filename)
 
         # respond to interaction
         if interaction:
@@ -366,6 +560,7 @@ class Plugin(BaseModule):
             embed.set_image(url=self.unpulled_casino_url)
             await self.casino_hide.send(embed=embed)
         urls.append(self.unpulled_casino_url)
+
         embed: discord.Embed = discord.Embed(
             title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
             description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
@@ -374,52 +569,66 @@ class Plugin(BaseModule):
         embed.set_image(url=self.unpulled_casino_url)
         casino_post: discord.Message = await message.channel.send(embed=embed) if message else \
             await interaction.channel.send(embed=embed)
-        for f in files[1:]:
-            delete_after: int = 30 if (f != files[-1] or len(wins) == 0) else 0
-            post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
-            urls.append(post.attachments[0].url)
-            embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
-                                  description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-                                  .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount)))
-            embed.set_image(url=post.attachments[0].url)
-            await self.casino_hide.send(embed=embed, delete_after=1.0)
-
-        # post the casino images to the user
         i: int = 1
-        for url in urls[1:]:
+        for f in files[1:]:
+            if 'bonus.png' in f:
+                if not self.bonus_casino_url:
+                    # bonus image hasn't been posted...
+                    post: discord.Message = await self.casino_hide.send(file=discord.File(f))
+                    self.bonus_casino_url = post.attachments[0].url
+                    embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
+                                          description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
+                                          .format(play_amount, self.get_user_balance(user) + play_amount)
+                                          )
+                    embed.set_image(url=self.bonus_casino_url)
+                    await self.casino_hide.send(embed=embed)
+                urls.append(self.bonus_casino_url)
+                url = self.bonus_casino_url
+            else:
+                delete_after: int = 25 if (f != files[-1] or len(wins) == 0) else 0
+                post: discord.Message = await self.casino_hide.send(file=discord.File(f), delete_after=delete_after)
+                urls.append(post.attachments[0].url)
+                embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
+                                      description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
+                                      .format('{:,}'.format(play_amount),
+                                              '{:,}'.format(self.get_user_balance(user) + play_amount)))
+                embed.set_image(url=post.attachments[0].url)
+                await self.casino_hide.send(embed=embed, delete_after=25.0)
+                await asyncio.sleep(0.6)
+                url = post.attachments[0].url
+
             embed = discord.Embed(title=self.bot.localizations.CASINO_EMBED_TITLE.format(user.name),
                                   description=self.bot.localizations.CASINO_EMBED_DESCRIPTION
-                                  .format('{:,}'.format(play_amount), '{:,}'.format(self.get_user_balance(user) + play_amount if i < len(files) - 1 \
-                                      else self.get_user_balance(user) + amount)))
+                                  .format('{:,}'.format(play_amount),
+                                          '{:,}'.format(self.get_user_balance(user) + play_amount if i < len(files) - 1 \
+                                                            else self.get_user_balance(user) + amount)))
             embed.set_image(url=url)
             await casino_post.edit(embed=embed)
+            await asyncio.sleep(2)
             i += 1
+
             if i == len(files):
-                await asyncio.sleep(3)
+                # reset cooldown
+                self.casino_times[ch_id] = 0
                 if amount != 0:
                     self.balances[user.id]['points'] += amount
-                    self.save_balances()
+                    self.roi_dict['saldo_winnings'] += amount
+
+                self.save_balances()
                 if len(wins) > 0 and amount >= 0:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN.
-                                                          format(self.bot.client.get_user(user.id).mention,
-                                                                 '{:,}'.format(amount)),
-                                                          message, interaction, channel_send=True)
+                    loc_text = self.bot.localizations.CASINO_WIN.format(
+                        self.bot.client.get_user(user.id).mention, '{:,}'.format(amount)) if anttu_bonus == 1 else \
+                        self.bot.localizations.CASINO_WIN_ANTTU.format(self.bot.client.get_user(user.id).mention,
+                                                                       '{:,}'.format(amount)) if anttu_bonus == 2 else \
+                            self.bot.localizations.CASINO_WIN_ANTTU_LOSE.format(
+                                self.bot.client.get_user(user.id).mention)
+                    msg = await self.bot.commands.message(loc_text, message, interaction, channel_send=True)
                 elif len(wins) > 0 > amount:
                     msg = await self.bot.commands.message(self.bot.localizations.CASINO_WIN_BAN.format(
                         self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
                     await asyncio.sleep(10)
-                else:
-                    msg = await self.bot.commands.message(self.bot.localizations.CASINO_LOSE.format(
-                        self.bot.client.get_user(user.id).mention), message, interaction, channel_send=True)
-                self.casino_times[ch_id] = 0
-                await asyncio.sleep(5)
-            if i < 2:
-                await asyncio.sleep(4)
-            else:
-                await asyncio.sleep(4)
 
-        # reset cooldown
-        self.casino_times[ch_id] = 0
+        await asyncio.sleep(4)
 
         try:
             if message:
@@ -428,8 +637,6 @@ class Plugin(BaseModule):
             pass
         finally:
             await casino_post.delete()
-            if len(wins) == 0:
-                await msg.delete()
         i: int = 0
         for file in files[1:]:
             i += 1
@@ -537,7 +744,7 @@ class Plugin(BaseModule):
 
     async def on_new_day(self, date_now: datetime):
         for file in os.listdir('data/casino/'):
-            if 'unpulled' not in file and '.png' in file:
+            if 'unpulled' not in file and '.png' in file and 'bonus.png' not in file:
                 os.remove(f'data/casino/{file}')
 
     def init_balances(self):
@@ -548,6 +755,10 @@ class Plugin(BaseModule):
         for user in self.bot.users:
             self.balances[user.id] = {'points': self.user_points_to_balance(user.stats.points),
                                       'reduce_points': self.user_points_to_balance(user.stats.points)}
+        self.roi_dict = {
+            "saldo_winnings": 0,
+            "saldo_played": 0
+        }
         self.save_balances()
 
     def save_balances(self):
@@ -556,12 +767,16 @@ class Plugin(BaseModule):
             for user_id in self.balances:
                 balances[str(user_id)] = self.balances[user_id]
             json.dump(balances, f)
+        with open(get_data_filename('roi', 'json'), 'w') as f:
+            json.dump(self.roi_dict, f)
 
     def load_balances(self):
         with open(get_data_filename('balances', 'json'), 'r') as f:
             balances = json.load(f)
             for user_id in balances:
                 self.balances[int(user_id)] = balances[user_id]
+        with open(get_data_filename('roi', 'json'), 'r') as f:
+            self.roi_dict = json.load(f)
 
     async def on_member_join(self, member: discord.Member):
         if member.id not in self.balances:

@@ -7,22 +7,22 @@
         "joker": 0
     },
     {
-        "name": "Santtu",
-        "filename": "santtu.png",
+        "name": "Kaljis",
+        "filename": "kaljis.png",
         "prevelance": 7,
         "win": 3,
         "joker": 0
     },
     {
-        "name": "Ukkapulla",
-        "filename": "ukka.png",
+        "name": "Ziwi",
+        "filename": "ziwi.png",
         "prevelance": 5,
         "win": 6,
         "joker": 0
     },
     {
-        "name": "Eeddspeaks",
-        "filename": "eedd.png",
+        "name": "Pormestari",
+        "filename": "pormestari.png",
         "prevelance": 4,
         "win": 8,
         "joker": 0
@@ -36,7 +36,7 @@
     },
     {
         "name": "Jokeri",
-        "filename": "jokeri_velmu.png",
+        "filename": "jokeri_norppa.png",
         "prevelance": 1,
         "win": 10,
         "joker": 1

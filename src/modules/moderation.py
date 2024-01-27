@@ -18,7 +18,7 @@ from src.basemodule import BaseModule
 
 DEFAULT_BAN_LENGTH: int = 12
 DEFAULT_EMOJI_BAN_LENGTH: int = 3
-DEFAULT_MUTE_LENGTH: int = 3
+DEFAULT_MUTE_LENGTH: int = 5
 
 
 @dataclass
@@ -79,17 +79,15 @@ class Plugin(BaseModule):
             if content_list[-1].isnumeric():
                 hours = int(content_list[-1])
         hours = max(1, min(18, hours))
-        reason = self.bot.localizations.BAN_DEFAULT_REASON if not reason else reason
+        reason = self.bot.localizations.BAN_DEFAULT_REASON.format(hours) if not reason else reason
         member: discord.Member = await self.bot.server.fetch_member(target_user.id)
 
         if not member:
             await self.bot.commands.error(self.bot.localizations.BAN_NOT_IN_GUILD.format(member.name), message,
                                           interaction)
             return
-        try:
-            await member.send(self.bot.localizations.BAN_DM.format(hours, reason))
-        except discord.Forbidden:
-            pass
+
+        await self.bot.send_dm(member, self.bot.localizations.BAN_DM.format(hours, reason))
 
         try:
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
@@ -164,15 +162,15 @@ class Plugin(BaseModule):
                 to_unmute.append(user)
         for user in to_unmute:
             try:
-                del self.mute_list[user]
                 member: discord.Member = self.bot.server.get_member(user.id)
+                if member is None:
+                    continue
+                del self.mute_list[user]
                 await member.remove_roles(mute_role)
                 await self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL).send(
                     self.bot.localizations.MEMBER_UNMUTED.format(member.name))
             except Exception as e:
                 print("couldn't unmute", e)
-                await self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL).send(
-                    self.bot.localizations.ON_ERROR)
 
         to_untimeout: list[discord.User] = []
         for user in self.timeout_list:
@@ -181,13 +179,13 @@ class Plugin(BaseModule):
 
         for user in to_unmute:
             try:
-                del self.timeout_list[user]
                 member: discord.Member = self.bot.server.get_member(user.id)
+                if member is None:
+                    continue
+                del self.timeout_list[user]
                 await member.edit(timed_out_until=None)
             except Exception as e:
                 print("couldn't untimeout", e)
-                await self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL).send(
-                    self.bot.localizations.ON_ERROR)
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.emoji.name != '🔴' or not functions.check_if_can_ban(payload.member, self.bot.config.BAN_ROLES):
@@ -204,6 +202,9 @@ class Plugin(BaseModule):
         hours: int = DEFAULT_EMOJI_BAN_LENGTH
         reason: str = message_content
         try:
+            await self.bot.send_dm(
+                member, self.bot.localizations.BAN_DM.format(hours,
+                                                             self.bot.localizations.BAN_DEFAULT_REASON.format(hours)))
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
             await self.bot.commands.message(self.bot.localizations.BAN_CHANNEL_ANNOUNCE
                                             .format(member.name, hours, reason, payload.member.name),
@@ -256,12 +257,9 @@ class Plugin(BaseModule):
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):
         hours: int = DEFAULT_BAN_LENGTH * 60 * 60
         if user in self.ban_list:
-            try:
-                await user.send(self.bot.localizations.BAN_DM
-                                .format(hours, self.bot.localizations.BAN_DEFAULT_REASON))
-            except discord.Forbidden:
-                print(f"Error! Can't send DM to user {user.name}")
-                pass
+            await self.bot.send_dm(
+                user, self.bot.localizations.BAN_DM.format(hours,
+                                                           self.bot.localizations.BAN_DEFAULT_REASON.format(hours)))
             return
         self.ban_list[user] = time.time() + DEFAULT_BAN_LENGTH * 60 * 60
         self.save_bans()
@@ -270,19 +268,19 @@ class Plugin(BaseModule):
         member: discord.Member = self.bot.server.get_member(after.id)
         if self.bot.config.ROLE_MUTED in [x.id for x in after.roles] \
                 and self.bot.config.ROLE_MUTED not in [x.id for x in before.roles]:
-            self.mute_list[member._user] = time.time() + DEFAULT_MUTE_LENGTH * 60 * 60
+            self.mute_list[member._user] = time.time() + DEFAULT_MUTE_LENGTH * 60
             await self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL).send(
-                self.bot.localizations.MEMBER_MUTED.format(after.name, DEFAULT_MUTE_LENGTH))
+                self.bot.localizations.MEMBER_MUTED.format(after.name, DEFAULT_MUTE_LENGTH), delete_after=30.0)
         if self.bot.config.ROLE_MUTED in [x.id for x in before.roles] \
                 and self.bot.config.ROLE_MUTED not in [x.id for x in after.roles] and \
                 after in self.mute_list:
             del self.mute_list[member._user]
             await self.bot.server.get_channel(self.bot.config.CHANNEL_GENERAL).send(
-                self.bot.localizations.MEMBER_UNMUTED.format(after.name), delete_after=15.0)
+                self.bot.localizations.MEMBER_UNMUTED.format(after.name), delete_after=30.0)
         if after.timed_out_until and not before.timed_out_until:
             delta_seconds: float = min(
                 (after.timed_out_until - datetime.now(tz=gettz(self.bot.config.TIMEZONE))).total_seconds(),
-                DEFAULT_MUTE_LENGTH * 60 * 60)
+                DEFAULT_MUTE_LENGTH * 60)
             if after.timed_out_until > datetime.now(tz=gettz(self.bot.config.TIMEZONE)) \
                     + timedelta(seconds=delta_seconds):
                 await after.edit(timed_out_until=datetime.now(tz=gettz(self.bot.config.TIMEZONE)) + \

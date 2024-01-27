@@ -227,6 +227,7 @@ class Bot(EventHandler):
 
     async def on_member_join(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
+        user.is_in_guild = True
         if user is not None:
             return
         filepath: str = await self.get_user_file(member)
@@ -235,9 +236,30 @@ class Bot(EventHandler):
         self.users.append(user)
         self.database.add_user(user)
 
+    async def on_member_ban(self, guild: discord.Guild, user: discord.User):
+        user: User = self.get_user_by_id(user.id)
+        if user is None:
+            return
+        user.set_roles(None)
+        user.is_in_guild = False
+
     async def on_member_remove(self, member: discord.Member):
         user: User = self.get_user_by_id(member.id)
         if user is None:
             return
         user.set_roles(None)
         user.is_in_guild = False
+
+    async def send_dm(self, user: discord.User | discord.Member | User, message: str):
+        """Sends DM to a User.
+
+        Args:
+            user (discord.User | discord.Member | User): User to send the DM to.
+            message: The message sent to the user
+        """
+        if isinstance(user, User):
+            user: discord.User = self.client.get_user(user.id)
+        try:
+            await user.send(message)
+        except discord.Forbidden:
+            print(f"Error! Can't send user {user.name} dm!")

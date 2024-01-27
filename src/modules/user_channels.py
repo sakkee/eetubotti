@@ -119,12 +119,25 @@ class Plugin(BaseModule):
         if not channel:
             channel = TextChannel(self, user)
             self.text_channels.append(channel)
+
+        send_commands: bool = False
         if not channel.id:
             # channel doesn't exist
             new_channel: discord.TextChannel = await self.bot.server.create_text_channel(user.name,
                                                                                          category=self.category)
             channel.id = new_channel.id
             channel.discord_channel = new_channel
+            send_commands = True
+
+        await channel.discord_channel.set_permissions(member, read_messages=True, send_messages=True,
+                                                      manage_messages=True, manage_permissions=True,
+                                                      manage_channels=True, manage_threads=True)
+        await channel.discord_channel.set_permissions(self.bot.server.get_role(self.bot.config.ROLE_LEVEL_10),
+                                                      view_channel=True, send_messages=True)
+        await channel.discord_channel.set_permissions(self.bot.server.get_role(self.bot.config.ROLE_EVERYONE),
+                                                      view_channel=False, send_messages=False)
+
+        if send_commands:
             commands: str = '> **!kanava**: luo oma kanava (jos tämä poistetaan) tai korjaa permissionit\n'
             commands += '> **🔴**: bännää käyttäjä tältä kanavalta\n'
             commands += '> **!kanava_unban** {käyttäjä}: päästää käyttäjän kanavalle taas'
@@ -132,12 +145,6 @@ class Plugin(BaseModule):
                 self.bot.localizations.NEW_CHANNEL_TEMPLATE.format(member.mention, commands))
             channel.pin_message = first_post.id
             await first_post.pin()
-
-        await channel.discord_channel.set_permissions(member, read_messages=True, send_messages=True,
-                                                      manage_messages=True, manage_permissions=True,
-                                                      manage_channels=True, manage_threads=True)
-        await channel.discord_channel.set_permissions(self.bot.server.get_role(self.bot.config.ROLE_LEVEL_20),
-                                                      view_channel=True, send_messages=True)
         await self.bot.commands.message(
             self.bot.localizations.YOUR_TEXT_CHANNEL.format(channel.discord_channel.mention), message, interaction)
         self.save_channels()
@@ -224,6 +231,14 @@ class Plugin(BaseModule):
         self.last_check_hour = message.created_at
 
         for channel in self.text_channels:
+            delete_messages: bool = False
+            for permission in channel.discord_channel.permissions_for(self.bot.server.get_role(self.bot.config.ROLE_EVERYONE)):
+                if (permission[0] != 'send_messages' and permission[0] != 'read_messages') or not permission[1]:
+                    continue
+                delete_messages = True
+                break
+            if not delete_messages:
+                continue
             if time.time() - channel.owner.stats.last_post_time >= \
                     self.bot.config.DELETE_CHANNEL_AFTER_INACTIVITY_HOURS * 3600:
                 await channel.discord_channel.delete(reason='Deleted due to inactivity')
@@ -259,6 +274,8 @@ class Plugin(BaseModule):
             for perm in iter(after.overwrites.get(permission)):
                 if perm[0] != 'mention_everyone' or not perm[1]:
                     continue
+                if perm[0] == 'mention_everyone' and perm[1]:
+                    await channel.discord_channel.set_permissions(permission, mention_everyone=False)
                 if permission.id == channel.owner.id:
                     await channel.discord_channel.set_permissions(
                         permission, mention_everyone=False, send_tts_messages=False, read_messages=True,

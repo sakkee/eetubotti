@@ -86,7 +86,7 @@ class Database:
                 user_stats = Stats(
                     user_id=user['user_id'],
                     time_in_voice=user['time_in_voice'],
-                    points=user['points'],
+                    points=user['points'] if not user['bot'] else 0,
                     first_post_time=user['first_post_time'],
                     gif_count=user['gif_count'],
                     emoji_count=user['emoji_count'],
@@ -108,6 +108,8 @@ class Database:
                     stats=user_stats, is_in_database=True)
 
                 users[user_id] = usr
+            if users[user_id].bot:
+                continue
             ad = ActivityDate(
                 user_id=user['user_id'],
                 year=user['year'],
