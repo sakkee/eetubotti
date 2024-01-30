@@ -180,7 +180,7 @@ class Plugin(BaseModule):
         for user in to_unmute:
             try:
                 member: discord.Member = self.bot.server.get_member(user.id)
-                if member is None:
+                if member is not None:
                     continue
                 del self.timeout_list[user]
                 await member.edit(timed_out_until=None)
