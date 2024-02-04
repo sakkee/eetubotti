@@ -229,6 +229,7 @@ class Bot(EventHandler):
         user: User = self.get_user_by_id(member.id)
         user.is_in_guild = True
         if user is not None:
+            user.set_roles(None)
             return
         filepath: str = await self.get_user_file(member)
         user = User(id=member.id, name=member.name, bot=int(member.bot), profile_filename=filepath,
