@@ -19,6 +19,7 @@
     "NO_LOVE": "et rakasta ketään :((( kokeile !rakkaus {rakastamasi käyttäjä}",
     "WRONG_LOVE": "{0} (**{1}**) rakastaa **{2}** mutta ei saa vastakaikua rakkaudelle :(",
     "LOVING": "{0} ({1}) :heart: {2} ({3})",
+    "SELF_LOVE":"{0} rakastaa itseään :heart: :3",
     "BIRTHDAY_DESCRIPTION": "tsekkaa kui paljo aikaa synttäreihin (synttärit muodossa 23.5.2010)",
     "BIRTHDAY_ERROR": "Jotain hevonperkelettä tapahtui enkä saanut syntymäpäivääsi merkattua. Olihan viestisi muodossa `!synttärit 25.5.2003` tai ees jotai tonnepäin??",
     "BIRTHDAY_WAIT": "Huutista! sun pitää odottaa vielä {0} päivää että voit vaihtaa syntymäpäivääsi!",
