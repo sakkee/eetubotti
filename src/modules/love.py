@@ -47,7 +47,7 @@ class Plugin(BaseModule):
         if user.id not in self.loves.keys():
             users=[]
             for x in self.bot.users:
-                if x.is_in_guild and x.level>10 and time.time() - x.stats.last_post_time > 24*60*60:
+                if x.is_in_guild and x.level>10 and time.time() - x.stats.last_post_time < 24*60*60:
                     users.append(x)
 
             random.shuffle(users)
