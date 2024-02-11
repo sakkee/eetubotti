@@ -25,7 +25,7 @@ class Plugin(BaseModule):
         #self.load_loves()
 
         @self.bot.commands.register(command_name='rakkaus', function=self.love,
-                                    description=self.bot.localizations.LOVE_DESCRIPTION, commands_per_day=6)
+                                    description=self.bot.localizations.LOVE_DESCRIPTION, commands_per_day=15)
         async def love(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['rakkaus'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
