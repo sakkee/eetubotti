@@ -44,11 +44,17 @@ class Plugin(BaseModule):
 
         love:int=-1
 
-        if user.id not in self.loves.keys():
+        if target_user is not None:
+            lover=target_user.id
+        else:
+            lover=user.id
+
+        if lover not in self.loves.keys():
             users=[]
             for x in self.bot.users:
                 if x.is_in_guild and x.level>10 and time.time() - x.stats.last_post_time < 24*60*60:
                     users.append(x)
+
 
             random.shuffle(users)
 
@@ -59,22 +65,23 @@ class Plugin(BaseModule):
                     random.seed(time.time()+x+(x*3))
                     love=users[random.randint(0,len(users)-1)].id
                     if x==49:   # Ebin fail-safe :-D
-                        self.loves[user.id]=user.id
-                        love=user.id
+                        self.loves[lover]=lover
+                        love=lover
                         print(love,user.id)
                 else:
                     break
 
 
-            self.loves[user.id]=love
-            self.loves[love]=user.id
+            self.loves[lover]=love
+            self.loves[love]=lover
         else:
-            love=self.loves[user.id]
+            love=self.loves[lover]
         
-        if love==user.id:
-            msg=self.bot.localizations.SELF_LOVE.format(f'<@{user.id}>')
+        
+        if love==lover:
+            msg=self.bot.localizations.SELF_LOVE.format(f'<@{lover}>')
         else:
-            msg=self.bot.localizations.LOVING.format(f'<@{user.id}>', user.name,f'<@{love}>',self.bot.get_user_by_id(love).name)
+            msg=self.bot.localizations.LOVING.format(f'<@{lover}>', self.bot.get_user_by_id(lover).name,f'<@{love}>',self.bot.get_user_by_id(love).name)
 
         await self.bot.commands.message(msg,message,interaction)
 

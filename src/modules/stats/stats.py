@@ -4,6 +4,7 @@ Module for the stats, points, levels, rank et cetera.
 Commands:
     !rank
     !streak
+    !streakit
     !top
     !grind
     !grindaajat
@@ -57,6 +58,16 @@ class Plugin(BaseModule):
                                     timeout=5)
         async def streak(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['streak'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction,
+                target_user=käyttäjä
+            )
+
+        @self.bot.commands.register(command_name='streakit', function=self.streakit,
+                                    description=self.bot.localizations.STREAK_DESCRIPTION, commands_per_day=10,
+                                    timeout=5)
+        async def streak(interaction: discord.Interaction, käyttäjä: discord.User = None):
+            await self.bot.commands.commands['streakit'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction,
                 target_user=käyttäjä
@@ -151,6 +162,14 @@ class Plugin(BaseModule):
         streak: int = functions.get_user_streak(target_user, self.bot.daylist)
         await self.bot.commands.message(self.bot.localizations.STREAK_SCORE.format(target_user.name, streak),
                                         message, interaction, delete_after=10)
+        
+    async def streakit(self,user:User, message:discord.Message | None = None,
+                       interaction: discord.Interaction | None = None,
+                       target_user: User | None = None,
+                       **kwargs):
+        if not target_user or not self.bot.get_user_by_id(target_user.id):
+            await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
+            return
 
     async def top(self, user: User, message: discord.Message | None = None,
                   interaction: discord.Interaction | None = None, **kwargs):
