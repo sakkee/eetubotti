@@ -170,6 +170,38 @@ class Plugin(BaseModule):
         if not target_user or not self.bot.get_user_by_id(target_user.id):
             await self.bot.commands.error(self.bot.localizations.USER_NOT_FOUND, message, interaction)
             return
+        
+        users={}  #USERID:STREAK
+
+        for usr in self.bot.users:  # Loop through the guild's users.
+            if usr.bot:             # Skip over bots.
+                continue
+
+                # Assign the key as the user's ID and the value as the user's streak.
+            users[usr.id]=functions.get_user_streak(usr,self.bot.daylist)
+
+
+            # Sort the dict into a list of tuples where the ones with a higher value (streak) are first.
+                # [(184820432,18), (572017482,5)] -> (KEY (ID),VALUE (STREAK))
+        sort=sorted(users.items(),key=lambda x: -int(x[1]))
+
+        i:int = 0   # Create integer which will be used to loop only 15 times.
+
+            # Create the string of the bot's response with the STREAK_TOP string.
+        sendable_message:str = self.bot.localizations.STREAK_TOP
+        for us in sort:
+            i+=1
+            if i > 15:  # Break for loop if the loop has looped over 15 times.
+                break
+            usr = self.bot.get_user_by_id(int(us[0]))
+
+                # Append the row of the user into the bot's response.
+            sendable_message+=self.bot.localizations.STREAK_ROW.format(i,usr.name,us[1])
+        
+            # Send response and delete it after 25 seconds.
+        await self.bot.commands.message(sendable_message,message,interaction,delete_after=25)
+
+        
 
     async def top(self, user: User, message: discord.Message | None = None,
                   interaction: discord.Interaction | None = None, **kwargs):

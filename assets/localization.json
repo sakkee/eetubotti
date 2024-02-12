@@ -36,6 +36,8 @@
     "ON_ERROR": "Jotain hevonperkelettä tapahtui??? tuli error???? (amk opin näyte työ)",
     "STREAK_DESCRIPTION": "näyttää käyttäjän striikin",
     "STREAK_SCORE": "{0}:lla on **{1}** päivän striikki meneillään!",
+    "STREAK_TOP":"STREAK SCOREBOARD TOP 15!\n",
+    "STREAK_ROW":"{0}. {1}, **{2}** päivää\n",
     "TOP_DESCRIPTION": "ketkä on eniten nörttejä servulla",
     "ACTIVITY_TOP": "GRINDAUSPISTEET SCOREBOARD TOP 15!\n",
     "ACTIVITY_ROW": "{0}. {1}, level **{2}**\n",
