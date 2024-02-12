@@ -66,7 +66,7 @@ class Plugin(BaseModule):
         @self.bot.commands.register(command_name='streakit', function=self.streakit,
                                     description=self.bot.localizations.STREAK_DESCRIPTION, commands_per_day=10,
                                     timeout=5)
-        async def streak(interaction: discord.Interaction, käyttäjä: discord.User = None):
+        async def streakit(interaction: discord.Interaction, käyttäjä: discord.User = None):
             await self.bot.commands.commands['streakit'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
                 interaction=interaction,
