@@ -183,7 +183,7 @@ class Plugin(BaseModule):
 
             # Sort the dict into a list of tuples where the ones with a higher value (streak) are first.
                 # [(184820432,18), (572017482,5)] -> (KEY (ID),VALUE (STREAK))
-        sort=sorted(users.items(),key=lambda x: -int(x[1]))
+        sort=sorted(users.items(),key=lambda x: -x[1])
 
         i:int = 0   # Create integer which will be used to loop only 15 times.
 
@@ -210,7 +210,7 @@ class Plugin(BaseModule):
             if usr.id == 456226577798135808 or usr.bot:
                 continue
             point_list.append([usr.id, usr.stats.points])
-        sorted_list = sorted(point_list, key=lambda x: -int(x[1]))
+        sorted_list = sorted(point_list, key=lambda x: -x[1])
         i: int = 0
         sendable_message: str = self.bot.localizations.ACTIVITY_TOP
         for k in sorted_list:
