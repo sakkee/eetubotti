@@ -77,7 +77,7 @@ class Plugin(BaseModule):
 
         @self.bot.commands.register(command_name="onko",function=self.onko,
                                     description=self.bot.localizations.ONKO_DESCRIPTION, 
-                                    commands_per_day=9999,timeout=1)
+                                    commands_per_day=15,timeout=30)
         async def onko(interaction:discord.Interaction,asia1:str='',asia2:str=''):
             await self.bot.commands.commands['onko'].execute(
                 user=self.bot.get_user_by_id(interaction.user.id),
