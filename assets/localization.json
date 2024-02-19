@@ -138,5 +138,10 @@
     "KISSA_RANKING": "**{0}** on servun #{1} paras kissa",
     "KISSA_TOP": "**Servun parhaimmat kissat**:\n{0}",
     "KISSA_TOP_ROW": "> {0}. paras kissa: **{1}**\n",
-    "KISSAT_HELP": "Äänestä omat lempikissasi servulla. Komento: `!kissat {käyttäjä} {käyttäjä} {käyttäjä} {käyttäjä} {käyttäjä}`."
+    "KISSAT_HELP": "Äänestä omat lempikissasi servulla. Komento: `!kissat {käyttäjä} {käyttäjä} {käyttäjä} {käyttäjä} {käyttäjä}`.",
+
+    "ONKO_DESCRIPTION":"Kertoo onko. :D",
+    "ONKO_GUIDE":"`!onko {asia}, {asia}`",
+    "ONKO_ON":"{0} on {1}. :D :huutavakrokotiili:",
+    "ONKO_EI":"{0} ei ole {1}. :huivittu:"
 }

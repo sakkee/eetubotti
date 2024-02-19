@@ -5,6 +5,7 @@ Commands:
     !kissa
     !kissat
     !kissa_top
+    !onko
 """
 import json
 import re
@@ -13,6 +14,8 @@ from dataclasses import dataclass, field
 import src.functions
 from src.basemodule import BaseModule
 from src.objects import User
+from random import randint
+import re
 
 # when is bauhaus open
 BAUHAUS_OPENING_TIMES: dict[str, dict[str, int]] = {
@@ -21,7 +24,6 @@ BAUHAUS_OPENING_TIMES: dict[str, dict[str, int]] = {
     'sunday': {'open': 10, 'close': 18}
 }
 BAUHAUS_TRIGGER_WORDS: list[tuple[str, str]] = [("bauhaus", "kii"), ("bauhaus", "kiinni"), ("bauhaus", "auki")]
-
 
 @dataclass
 class Plugin(BaseModule):
@@ -73,6 +75,44 @@ class Plugin(BaseModule):
                 interaction=interaction
             )
 
+        @self.bot.commands.register(command_name="onko",function=self.onko,
+                                    description=self.bot.localizations.ONKO_DESCRIPTION, 
+                                    commands_per_day=9999,timeout=1)
+        async def onko(interaction:discord.Interaction,asia1:str='',asia2:str=''):
+            await self.bot.commands.commands['onko'].execute(
+                user=self.bot.get_user_by_id(interaction.user.id),
+                interaction=interaction,
+                asia1=asia1,
+                asia2=asia2
+            )
+
+    async def onko(self,user:User,message:discord.Message = None, interaction: discord.Interaction = None,
+                    target_user:discord.User=None,asia1:str='',asia2:str=''):
+        content:list[str]
+        
+        print(f"\n\n{type(asia1)} [{asia1}], {type(asia2)} [{asia2}]\n\n")
+        regex=r"[\?]"
+        if interaction:
+            content=[re.sub(regex,"",x.strip()) \
+                    for x in [asia1,asia2] \
+                    if re.sub(regex,"",x.strip())!=""]
+        else:
+            content=[re.sub(regex,"",x.strip()) \
+                    for x in message.content[6:].strip().split(",") \
+                    if re.sub(regex,"",x.strip())!=""]
+
+        if len(content)<2:
+            await self.bot.commands.message(self.bot.localizations.ONKO_GUIDE,message,interaction)
+            return
+
+        onko:int=randint(0,99)
+        if onko<50:
+            rt_msg:str=self.bot.localizations.ONKO_ON.format(content[0],content[1])
+        else:
+            rt_msg:str=self.bot.localizations.ONKO_EI.format(content[0],content[1])
+
+        await self.bot.commands.message(rt_msg,message,interaction)
+
     async def kissa_top(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None,
                         **kwargs):
         kissa_rankings = self.get_kissa_rankings()[:10]
@@ -105,7 +145,6 @@ class Plugin(BaseModule):
 
         user_list.sort(key=lambda x: x[1], reverse=True)
         return [user for user, _ in user_list]
-
 
     async def kissat(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None,
                      target_user: discord.User = None,
