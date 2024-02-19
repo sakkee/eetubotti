@@ -102,7 +102,7 @@ class Plugin(BaseModule):
                     if re.sub(regex,"",x.strip())!=""]
 
         if len(content)<2:
-            await self.bot.commands.message(self.bot.localizations.ONKO_GUIDE,message,interaction)
+            await self.bot.commands.message(self.bot.localizations.ONKO_GUIDE,message,interaction,delete_after=10)
             return
 
         onko:int=randint(0,99)
@@ -111,7 +111,7 @@ class Plugin(BaseModule):
         else:
             rt_msg:str=self.bot.localizations.ONKO_EI.format(content[0],content[1])
 
-        await self.bot.commands.message(rt_msg,message,interaction)
+        await self.bot.commands.message(rt_msg,message,interaction,delete_after=30)
 
     async def kissa_top(self, user: User, message: discord.Message = None, interaction: discord.Interaction = None,
                         **kwargs):
