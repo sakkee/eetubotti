@@ -95,11 +95,11 @@ class Plugin(BaseModule):
         if interaction:
             content=[re.sub(regex,"",x.strip()) \
                     for x in [asia1,asia2] \
-                    if re.sub(regex,"",x.strip())!=""]
+                    if re.sub(regex,"",x.strip())!="" and len(re.sub(regex,"",x.strip()))<50]
         else:
             content=[re.sub(regex,"",x.strip()) \
                     for x in message.content[6:].strip().split(",") \
-                    if re.sub(regex,"",x.strip())!=""]
+                    if re.sub(regex,"",x.strip())!="" and len(re.sub(regex,"",x.strip()))<50]
 
         if len(content)<2:
             await self.bot.commands.message(self.bot.localizations.ONKO_GUIDE,message,interaction,delete_after=10)

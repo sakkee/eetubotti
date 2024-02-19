@@ -142,6 +142,6 @@
 
     "ONKO_DESCRIPTION":"Kertoo onko. :D",
     "ONKO_GUIDE":"`!onko {asia}, {asia}`",
-    "ONKO_ON":"{0} on {1}. :D <:huutavakrokotiili:1137486002693345420>",
+    "ONKO_ON":"{0} on {1}. <:huutavakrokotiili:1137486002693345420>",
     "ONKO_EI":"{0} ei ole {1}. <:huivittu:1151610516825964625>"
 }
