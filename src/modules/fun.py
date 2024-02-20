@@ -91,7 +91,7 @@ class Plugin(BaseModule):
         content:list[str]
         
         print(f"\n\n{type(asia1)} [{asia1}], {type(asia2)} [{asia2}]\n\n")
-        regex=r"[\?]"
+        regex=r"[\?\@]"
         if interaction:
             content=[re.sub(regex,"",x.strip()) \
                     for x in [asia1,asia2] \
