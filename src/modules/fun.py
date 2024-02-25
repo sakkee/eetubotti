@@ -89,8 +89,6 @@ class Plugin(BaseModule):
     async def onko(self,user:User,message:discord.Message = None, interaction: discord.Interaction = None,
                     target_user:discord.User=None,asia1:str='',asia2:str=''):
         content:list[str]
-        
-        print(f"\n\n{type(asia1)} [{asia1}], {type(asia2)} [{asia2}]\n\n")
         regex=r"[\?\@]"
         if interaction:
             content=[re.sub(regex,"",x.strip()) \
