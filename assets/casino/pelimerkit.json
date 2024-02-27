@@ -2,56 +2,56 @@
     {
         "name": "Natgor",
         "filename": "natgor.png",
-        "prevelance": 8,
+        "prevalence": 8,
         "win": 3,
         "joker": 0
     },
     {
         "name": "Kaljis",
         "filename": "kaljis.png",
-        "prevelance": 7,
+        "prevalence": 7,
         "win": 3,
         "joker": 0
     },
     {
         "name": "Ziwi",
         "filename": "ziwi.png",
-        "prevelance": 5,
+        "prevalence": 5,
         "win": 6,
         "joker": 0
     },
     {
         "name": "Pormestari",
         "filename": "pormestari.png",
-        "prevelance": 4,
+        "prevalence": 4,
         "win": 8,
         "joker": 0
     },
     {
         "name": "Jusu",
         "filename": "jusu.png",
-        "prevelance": 3,
+        "prevalence": 3,
         "win": 9,
         "joker": 0
     },
     {
         "name": "Jokeri",
         "filename": "jokeri_norppa.png",
-        "prevelance": 1,
+        "prevalence": 1,
         "win": 10,
         "joker": 1
     },
     {
         "name": "Euroshopper",
         "filename": "es.png",
-        "prevelance": 2,
+        "prevalence": 2,
         "win": 15,
         "joker": 0
     },
     {
         "name": "Megaforce",
         "filename": "megis.png",
-        "prevelance": 2,
+        "prevalence": 2,
         "win": -15,
         "joker": 0
     }

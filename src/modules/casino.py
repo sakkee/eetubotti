@@ -79,7 +79,7 @@ class Images:
     anttu_lose: Image.Image = Image.open(get_filename('anttu_bonus_lose.png')).convert('RGBA').resize(Constants.BG_SIZE)
     anttu_win: Image.Image = Image.open(get_filename('anttu_bonus_win.png')).convert('RGBA').resize(Constants.BG_SIZE)
 
-    win_images: dict[str, Image] = {
+    win_images: dict[str, Image.Image] = {
         '1': Image.open(get_filename('linja1.png')),
         '2': Image.open(get_filename('linja2.png')),
         '3': Image.open(get_filename('linja3.png')),
@@ -99,10 +99,10 @@ class Images:
 class Chip:
     name: str
     filename: str
-    prevelance: int
+    prevalence: int
     win: int
     joker: int
-    file: Image = None
+    file: Image.Image = None
 
     def __post_init__(self):
         self.filename = get_filename(self.filename, True)
@@ -682,7 +682,7 @@ class Plugin(BaseModule):
         for i in range(Constants.COLUMNS):
             positions: dict[str, Chip] = {}
             for chip in assets:
-                for j in range(chip.prevelance):
+                for j in range(chip.prevalence):
                     rd = random.randrange(Constants.MAXIMUM)
                     while str(rd) in positions:
                         rd = random.randrange(Constants.MAXIMUM)
