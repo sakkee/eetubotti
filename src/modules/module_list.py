@@ -10,11 +10,11 @@ from . import (
     ircs,
     casino,
     get,
-    empty_channels,
     moderation,
     anttubott,
     user_channels,
-    fun
+    fun,
+    empty_channels
 )
 from src.basemodule import BaseModule
 
@@ -25,9 +25,9 @@ module_list: list[Type[BaseModule]] = [
     stats.stats.Plugin,
     casino.Plugin,
     get.Plugin,
-    empty_channels.Plugin,
     moderation.Plugin,
     anttubott.Plugin,
     user_channels.Plugin,
-    fun.Plugin
+    fun.Plugin,
+    empty_channels.Plugin
 ]

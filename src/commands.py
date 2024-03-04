@@ -15,7 +15,8 @@ class Command:
 
     Args:
         manager (CommandManager): The Command Manager.
-        command_name (str): name of the command, e.g. 'rank', 'irc', 'top' etc
+        command_name (str): name of the command, e.g. 'rank', 'irc', 'top' etc.
+        description (str): description of the command.
         fnc (Callable): the function which is executed (part of the module classes)
         disabled (bool): The command is disabled.
         commands_per_day (int): How many times the user can use the command on other channels than bot command channel.
@@ -35,6 +36,7 @@ class Command:
     """
     manager: CommandManager
     command_name: str
+    description: str
     fnc: Callable
     thresholds: dict[User.id, int] = field(default_factory=dict)
     disabled: bool = False
@@ -227,7 +229,7 @@ class CommandManager(BaseModule):
 
         def decorator(fnc: Callable):
             """Decorates the executable function and adds it to the Bot's Command Tree."""
-            self.commands[command_name] = Command(self, command_name, function, commands_per_day=commands_per_day,
+            self.commands[command_name] = Command(self, command_name, description, function, commands_per_day=commands_per_day,
                                                   timeout=timeout, level_required=level_required)
             if command_name != 'ban':
                 self.point_commands[f'!{command_name}'] = command_name

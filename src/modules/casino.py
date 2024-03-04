@@ -197,7 +197,7 @@ class Plugin(BaseModule):
             )
 
         @self.bot.commands.register(command_name='palautusprosentti', function=self.roi,
-                                    description=self.bot.localizations.LOW_BALANCES_DESCRIPTION,
+                                    description=self.bot.localizations.RTP_DESCRIPTION,
                                     commands_per_day=15, timeout=10)
         async def roi(interaction: discord.Interaction):
             await self.bot.commands.commands['palautusprosentti'].execute(

@@ -8,19 +8,25 @@
     "TOO_LOW_LEVEL": "et oo tarpeeks isolevunen kokeile {0}",
     "TOO_LOW_LEVEL_2": "äijä ei oo tarpeeks isolevunen, tuu takas sit ku oot level **{0}** :D",
     "NOT_OWNER": "Huutista sulle :D ei taida roolit riittää pojalla?+1++++",
-    "IRC_DESCRIPTION": "tsekkaa ketä oot irkistä tänää :D",
+    "IRC_DESCRIPTION": "Tsekkaa ketä oot irkistä tänää :D",
     "USER_NOT_FOUND": "en löytänyt käyttäjää,, tai sitten en y,,ärtäny ",
+
+
     "WAIT": "odotappas jolophhi vielä {0} {1}",
     "WAIT_SECOND": "sekunti",
     "WAIT_SECONDS": "sekuntia",
     "WAIT_MINUTE": "minuutti",
     "WAIT_MINUTES": "minuuttia",
-    "LOVE_DESCRIPTION": "kerro rakkautesi kohde :D",
+
+
+    "LOVE_DESCRIPTION": "Kertoo päivän rakkautesi :D",
     "NO_LOVE": "et rakasta ketään :((( kokeile !rakkaus {rakastamasi käyttäjä}",
     "WRONG_LOVE": "{0} (**{1}**) rakastaa **{2}** mutta ei saa vastakaikua rakkaudelle :(",
     "LOVING": "{0} ({1}) :heart: {2} ({3})",
     "SELF_LOVE":"{0} rakastaa itseään :heart: :3",
-    "BIRTHDAY_DESCRIPTION": "tsekkaa kui paljo aikaa synttäreihin (synttärit muodossa 23.5.2010)",
+
+
+    "BIRTHDAY_DESCRIPTION": "Tsekkaa kui paljo aikaa synttäreihin (synttärit muodossa 23.5.2010, DD.MM.YYYY)",
     "BIRTHDAY_ERROR": "Jotain hevonperkelettä tapahtui enkä saanut syntymäpäivääsi merkattua. Olihan viestisi muodossa `!synttärit 25.5.2003` tai ees jotai tonnepäin??",
     "BIRTHDAY_WAIT": "Huutista! sun pitää odottaa vielä {0} päivää että voit vaihtaa syntymäpäivääsi!",
     "BIRTHDAY_UNDERAGE": "ei vittu äijä on alaikäbän en voi merkata :D",
@@ -29,26 +35,32 @@
     "BIRTHDAY_NOT_YET_SET": "Käyttäjällä {0} ei ole syntymäpäivää :( hän voi lisätä syntymäpäivän komennolla:\n`!synttärit day.month.year` (eli esimerkiksi `!synttärit 25.5.2005`) (varoitus! oman syntymäpäivän voi määrittää vain kerran vuodessa)",
     "BIRTHDAY_TODAY": "Käyttäjällä {0} on TÄNÄÄN synttärit! EI VITTU ONNEKS OLKOON :DDD",
     "BIRTHDAY_DELTA": "Käyttäjän {0} synttärit on {1}.{2}., ja niihin on vielä {3} päivää aikaa.",
-    "NEXT_BIRTHDAYS_DESCRIPTION": "Seuraavat synttärisankarit",
+    "NEXT_BIRTHDAYS_DESCRIPTION": "Kertoo seuraavat synttärisankarit",
     "NEXT_BIRTHDAYS_TITLE": "**Seuraavat synttärisankarit:**\n",
     "NEXT_BIRTHDAYS_ROW": "> **{0}.{1}.** {2}\n",
-    "RANK_DESCRIPTION": "näyttää käyttäjän levelin (eli kui nolife on)",
+
+
+    "RANK_DESCRIPTION": "Näyttää käyttäjän levelin (eli kui nolife on)",
     "ON_ERROR": "Jotain hevonperkelettä tapahtui??? tuli error???? (amk opin näyte työ)",
-    "STREAK_DESCRIPTION": "näyttää käyttäjän striikin",
+    "STREAK_DESCRIPTION": "Näyttää käyttäjän striikin",
     "STREAK_SCORE": "{0}:lla on **{1}** päivän striikki meneillään!",
     "STREAK_TOP":"STREAK SCOREBOARD TOP 15!\n",
     "STREAK_ROW":"{0}. {1}, **{2}** päivää\n",
-    "TOP_DESCRIPTION": "ketkä on eniten nörttejä servulla",
+
+
+    "TOP_DESCRIPTION": "Näyttää ketkä on eniten nörttejä servulla",
     "ACTIVITY_TOP": "GRINDAUSPISTEET SCOREBOARD TOP 15!\n",
     "ACTIVITY_ROW": "{0}. {1}, level **{2}**\n",
-    "ACTIVITY_DESCRIPTION": "näyttää kui kova grindaaja on tällä hetkellä",
-    "ACTIVITY_TOP_DESCRIPTION": "näyttää kovimmat grindaajat nyt",
+    "ACTIVITY_DESCRIPTION": "Näyttää kui kova grindaaja on tällä hetkellä",
+    "ACTIVITY_TOP_DESCRIPTION": "Näyttää kovimmat grindaajat nyt",
     "ACTIVE_YES": "{0} on kahden viikon ajalta **{1}** pistettä, ja grindaaja-rooli vaatii noin **{2}** pistettä. Näillä pisteillä on huomenna grindaaja-rankki :DD",
     "ACTIVE_NO": "{0} on kahden viikon ajalta **{1}** pistettä, ja grindaaja-rooli vaatii noin **{2}** pistettä. Näillä pisteillä ei oo huomenna grindaaja-rankkia :DD",
     "ACTIVE_ROW_TITLE": "{0}-{1} kovimmat grindaajat:\n",
     "ACTIVE_ROW_NO_TITLE": "ei ihan niin kovat grindaajat:\n",
     "GRIND_ROW": "> **{0}.** {1} {2} pistettä\n",
-    "CASINO_DESCRIPTION": "pelaappas jolopphi kasinoa (0-100000)",
+
+
+    "CASINO_DESCRIPTION": "Pelaappas jolopphi kasinoa (0-1.000.000)",
     "CASINO_GUIDE": "Komento: !kasino {summa}",
     "CASINO_WRONG_SUM": "Summan täytyy olla välillä {0}-{1} vitun huora :D",
     "CASINO_ONGOING": "kasino on kesken vittu :DD odota xdddd vitu adhd:_D",
@@ -64,16 +76,22 @@
     "CASINO_CANT_KELA": "Et ole maksuhäiriössä niin et voi käyttää tätä komentoa :(",
     "CASINO_KELA": "{0} kävi kelassa ja waretti saldoa seuraavilta ukkeleilta: {1}",
     "KELA_DESCRIPTION": "Käväise kelassa ja wareta muilta saldoa, ei oo keltään pois :D",
+
+
     "BIRTHDAY_ANNOUNCE_JUSU": "@everyone Tänään on {0} synttärit!!!! WUHUU JIPPIIIII!!!!",
     "BIRTHDAY_ANNOUNCE": "Tänään on käyttäjän {0} synttärit! Wuhuu JIPPII!",
-    "DOUBLE_DESCRIPTION": "koitas rollaa tuplat",
-    "GET_DESCRIPTION": "rollaa numero väliltä 0-1000000",
+
+
+    "DOUBLE_DESCRIPTION": "Koitas rollaa tuplat :D",
+    "GET_DESCRIPTION": "Rollaa numero väliltä 0-1000000",
     "DOUBLE_NO_WIN": "**{0}**, luuseri :D",
     "DOUBLE_WIN": "**{0}**, tuli tuplat! jeaaaaHH",
     "GET_BIG_WIN": "**{0}** DING DING DING DING!!!!! **EI VITTU MIKÄ GETTI TULKAA KATTOMAAN!!!!** @everyone EI VITTU!!!! TÄÄ !!!!!!!!!!!! EI SAAATANA!!!!!!!!!!!!!!11 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA XDD MUISTA MERKITÄ INTERNET-CV:EEN TÄÄ :D:D",
     "GET_PENTAS": "**{0}** DING ihan vitun nätit pentat!!!! JÄBÄ on ALFA!!! EI VITTU!!!!!!!!!! XDDDD @everyone",
     "GET_QUADROS": "**{0}** hienot quadrot :D @everyone tsekatkaas tän gettiä :D JÄBÄ on ALFA!!! EI VITTU!!!!!!!!!! XDDDD",
     "GET_TRIPLE": "**{0}** NOIN!!!! TRIPLAT!!! Saat runkata kenelle haluut :D:D:D",
+
+
     "BLACKLISTED": "{0} viestisi sisälsi mustalistatun sisällön",
     "BLACKLISTED_LOG": "{0} blacklisted the following: {1}",
     "BLACKLISTED_POST": "{0} posted the following: {1}",
@@ -82,9 +100,11 @@
     "BLACKLISTED_BAN_ANNOUNCE": "Bännäsin just {0} syy: sisälsi mustalistatun sisällön",
     "BLACKLISTED_KICK_DM": "Lähetit mustalistatun sisällön! Tää on varotus :D lähetit tän:\n> {0} \n tervetuloo joskus takas kuha käyttäydyt https://discord.gg/sW6Dr2K",
     "BLACKLISTED_KICK_LOG": "Mustalistattu sisältö. Sisältö: {0}",
+
+
     "MODULE_RELOADED": "{0} reloadattu uudestaan",
     "MODULE_NOT_FOUND": "{0} enpä löytänyt",
-    "BAN_DESCRIPTION": "bännää käyttäjä `!ban {käyttäjä} {syy} {tunnit}`",
+    "BAN_DESCRIPTION": "Bännää käyttäjä ?ban {käyttäjä} {syy} {tunnit}",
     "BAN_NO_PERMISSION": "eipä tainnu olla oikeuksia tähä kys :D",
     "BAN_NOT_IN_GUILD": "en löytänyt servulta {0}",
     "BAN_DM": "Olet bännätty {0} tunniksi, syy:\n> {1}\nLinkki takaisin (toivottavasti toimii): https://discord.com/invite/sW6Dr2K",
@@ -98,12 +118,16 @@
     "MEMBER_MUTED": "**{0}** on mutetettu max {1} minuutiksi :D",
     "MEMBER_UNMUTED": "**{0}** on unmutetettu",
     "NO_LINKS_IN_GENERAL": "Ei linkkejä tai mediaa yleiseen {0}! Voi tulla kick. Mene <#{1}>",
+
+
     "BALANCE_DESCRIPTION": "Näyttää käyttäjän saldon",
     "BALANCE_RESPONSE": "**{0}**:n saldo on {1}",
     "TOO_LOW_BALANCE": "Huutista sun saldo on liian pieni, et pysty pelaa :D",
-    "BALANCES_DESCRIPTION": "Top 10 saldoa",
+    "BALANCES_DESCRIPTION": "Top 10 saldoa.",
     "BALANCES_TITLE": "**TOP 10 saldoa:**\n",
     "BALANCES_ROW": "> {0}. **{1}** {2} pistettä\n",
+
+
     "GIVE_DESCRIPTION": "Anna käyttäjälle saldoa",
     "GIVE_TOO_POOR": "Ei sulla ole saldoa annettavaks :D huutista sulle",
     "GIVE_CANT_SELF": "et sä voi antaa ittelles saldoa :D",
@@ -112,6 +136,10 @@
     "GIVE_SUCCESS": "Käyttäjä **{0}** antoi käyttäjälle **{1}** {2} saldoa! Huutista mikä cuck :D",
     "LOW_BALANCES_TITLE": "**Pahimmat maksuhäiriöt:**\n",
     "LOW_BALANCES_DESCRIPTION": "Näyttää servun 10 pahinta maksuhäiriö tyyppiä",
+
+    "RTP_DESCRIPTION":"Kertoo kasinon palautusprosentin.",
+
+
     "ANTTU_BAN_ANNOUNCE": "{0} saat bännit 10 sekunnin päästä koska anttubott pyytää",
     "BAN_ANNOUNCE_5S": "5 sekuntia niin päästää tästä jolophista {0}",
     "ANTTU_BAN_REASON": "bännit koska anttubott pyysi",
@@ -120,7 +148,7 @@
     "NO_USER_CATEGORY_EXISTS": "ERROR! en löytänyt servulta käyttäjien omien kanavien kategoriaa. luoppas jolopphi sellainen tai päivitä botin config",
     "YOUR_TEXT_CHANNEL": "Sinun tekstikanavasi: {0}",
     "NEW_CHANNEL_TEMPLATE": "Tämä on {0}:n oma tekstikanava. Kanava tyhjennetään, jos everyone-roolilla on luku- tai viestioikeus kanavaan. Kanavalla on noudatettava Discordin sääntöjä ja **omistaja on siitä vastuussa**.\n\nOmistaja sekä servun adminit voivat vaihtaa kanavan tietoja ja oikeuksia. Kanavan on oltava NSFW ja kanavan nimen sama kuin luojan nimi.\n\n**Komennot:**\n{1}",
-    "UNBAN_ON_CHANNEL": "poistaa kohteen bannin omalta tekstikanavalta. käyttö: `!kanava_unban {käyttäjä}",
+    "UNBAN_ON_CHANNEL": "Poistaa kohteen bannin omalta tekstikanavalta. käyttö: !kanava_unban {käyttäjä}",
     "NOT_A_CHANNEL_OWNER": "sullapa ei ollu omaa kanavaa. kokeileppas `!kanava` komentoa",
     "UNBANNED_FROM_CHANNEL": "unbännäsin just **{0}** käyttäjän **{1}**:n tekstikanavalta",
     "BANNED_FROM_CHANNEL": "bännäsin just **{0}** tältä kanavalta :D",
@@ -143,5 +171,8 @@
     "ONKO_DESCRIPTION":"Kertoo onko. :D",
     "ONKO_GUIDE":"`!onko {asia}, {asia}`",
     "ONKO_ON":"{0} on {1}. <:huutavakrokotiili:1137486002693345420>",
-    "ONKO_EI":"{0} ei ole {1}. <:huivittu:1151610516825964625>"
+    "ONKO_EI":"{0} ei ole {1}. <:huivittu:1151610516825964625>",
+
+    "KOMENTO_LIST":"# KOMENTOJA :D\n",
+    "KOMENTO_ROW":"**{0}** `{1}`\n"
 }
