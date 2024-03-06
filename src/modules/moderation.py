@@ -15,6 +15,7 @@ import src.functions as functions
 from src.objects import User
 import time
 from src.basemodule import BaseModule
+import re
 
 DEFAULT_BAN_LENGTH: int = 12
 DEFAULT_EMOJI_BAN_LENGTH: int = 3
@@ -98,7 +99,7 @@ class Plugin(BaseModule):
             self.save_bans()
 
             await self.bot.commands.message(self.bot.localizations.BAN_CHANNEL_ANNOUNCE
-                                            .format(member.name, hours, reason, user.name),
+                                            .format(member.name, hours, re.sub(r"[\@]","",reason), user.name),
                                             message, interaction, channel_send=True)
             if interaction:
                 await interaction.response.send_message('meni bänneille')

@@ -51,7 +51,7 @@ class Plugin(BaseModule):
 
         self.list_msg=await self.bot.client.get_channel(self.bot.config.CHANNEL_BOTCOMMANDS).send(cmd_msg)
 
-        print(self.list_msg.id)
+        #print(self.list_msg.id)
 
     def is_three_hours_old(self, message: discord.Message) -> bool:
         if message.id==self.list_msg.id:
