@@ -208,7 +208,7 @@ class Plugin(BaseModule):
                                                              self.bot.localizations.BAN_DEFAULT_REASON.format(hours)))
             await self.bot.server.ban(member, delete_message_days=0, reason=reason)
             await self.bot.commands.message(self.bot.localizations.BAN_CHANNEL_ANNOUNCE
-                                            .format(member.name, hours, re.sub(r"[\@]","",reason), payload.member.name),
+                                            .format(member.name, hours, re.sub(r"[\@]","(at)",reason), payload.member.name),
                                             message, None, channel_send=True)
             banned_user: discord.User = await self.bot.client.fetch_user(member.id)
             if banned_user in self.ban_list:
