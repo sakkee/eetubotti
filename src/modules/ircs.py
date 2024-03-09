@@ -54,15 +54,20 @@ class Plugin(BaseModule):
                 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
             }
             while True:
-                a = requests.get(url=random, headers=headers)
-                pq = PyQuery(a.text)
-                user_name = pq('meta[name=title]').attr('content')
-                if user_name is None:
-                    continue
-                link = base_link + user_name
-                photo_link = pq('img.photo').attr('src')
-                target_user.irc = Irc(user_name, link, photo_link)
-                break
+                try:    #AMK lopputyö
+                    a = requests.get(url=random, headers=headers,timeout=5)
+                    pq = PyQuery(a.text)
+                    user_name = pq('meta[name=title]').attr('content')
+                    if user_name is None:
+                        continue
+                    link = base_link + user_name
+                    photo_link = pq('img.photo').attr('src')
+                    target_user.irc = Irc(user_name, link, photo_link)
+                    break
+                except Exception as e:
+                    print(message.content)
+                    print(e)
+                    break
 
         embed = discord.Embed(title=self.bot.localizations.IRC_TITLE.format(target_user.name, user_name),
                               url=link)
